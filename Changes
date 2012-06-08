@@ -1,3 +1,6 @@
+* bash-itunes 1.0.4 (candidate)
+  * Fetch track info in single AppleScript call for speed.
+
 * bash-itunes 1.0.3 (2012-06-08-11:29)
   * Crank that release-schedule, eat your heart out firefox:
     * make pause/stop actually pause/stop rather than play.

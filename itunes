@@ -93,12 +93,18 @@ function _show_info() {
     prefix="$1"
     showrating="$2"
 
-    # TODO: not very efficient to fetch one at a time
-    track=$(_tell_itunes "name of current track")
-    artist=$(_tell_itunes "artist of current track")
-    album=$(_tell_itunes "album of current track")
-    year=$(_tell_itunes "year of current track")
-    rating=$(_tell_itunes "rating of current track")
+    #  This insanity is to avoid the pain of fetching details one at a time
+    #  It will break if you've got pipes | in the track details. I tried with
+    #  newlines but $IFS wasn't happy for some reason.
+    fetched_details=$(_osascript "tell application \"iTunes\" to set details to (name, artist, album, year, rating) of current track
+set AppleScript's text item delimiters to \"|\"
+details as text")
+    IFS="|" read -r -a details <<< "$fetched_details"
+    track=${details[0]}
+    artist=${details[1]}
+    album=${details[2]}
+    year=${details[3]}
+    rating=${details[4]}
     _log 3 "Fetched track '$track', artist '$artist', album '$album', year '$year', rating '$rating'"
     echo -n "$prefix \"$track\""
     if [ -n "$artist" ]; then
