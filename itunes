@@ -14,16 +14,17 @@
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
 version='1.0.0'
+progname=`basename $0`
 
 #  Version and help.
 
 function _cmd_version() {
-    echo "$0 version $version"
+    echo "$progname version $version"
 }
 
 function _cmd_help() {
     _cmd_version
-    echo "Usage: $0 [-v] [-h] [-d] <command> [<args>]
+    echo "Usage: $progname [-v] [-h] [-d] <command> [<args>]
 
 Switches:
     -v         Show version information and exit.
@@ -59,7 +60,7 @@ Additional commands:
 }
 
 function _cmd_unknown() {
-    echo "Unknown command '$cmd', try '$0 help' for a list of valid commands."
+    echo "Unknown command '$cmd', try '$progname help' for a list of valid commands."
 }
 
 #  Helper functions
@@ -106,7 +107,7 @@ function _show_info() {
     if [ -n "$album" ]; then
         echo -n ", from \"$album\""
         if [ -n "$year" -a "$year" != 0 ]; then
-            echo -n "($year)"
+            echo -n " ($year)"
         fi
     fi
     echo "."
@@ -297,6 +298,6 @@ case "$cmd" in
     hide)        _cmd_hide "$@"      ;;
     #  Extra commands.
     version)     _cmd_version "$@"   ;;
-    help)        _cmd_help "$@"      ;;
+    ""|help)     _cmd_help "$@"      ;;
     *)           _cmd_unknown "$@"   ;;
 esac

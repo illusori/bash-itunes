@@ -1,2 +1,7 @@
+* bash-itunes 1.0.1 (2012-06-08-10:12)
+  * Fix typo in tune year display.
+  * Fix program name display.
+  * Plain "itunes" displays help too.
+
 * bash-itunes 1.0.0 (2012-06-08-10:12)
   * Initial release.
