@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.0.2'
+version='1.0.3'
 progname=`basename $0`
 
 #  Version and help.
@@ -125,12 +125,12 @@ function _cmd_play() {
 
 function _cmd_pause() {
     echo "Pausing iTunes."
-    _tell_itunes "play"
+    _tell_itunes "pause"
 }
 
 function _cmd_stop() {
     echo "Stopping iTunes."
-    _tell_itunes "play"
+    _tell_itunes "stop"
 }
 
 function _cmd_next() {
