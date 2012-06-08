@@ -6,6 +6,7 @@ control iTunes from the terminal or over SSH.
 
 Currently it supports the following commands:
 
+```
 Navigation commands:
     play       Start or resume playing.
     pause      Pause playing.
@@ -30,6 +31,7 @@ Application commands:
 Additional commands:
     version    Show version information and exit.
     help       Show this help and exit.
+```
 
 Setup
 -----
