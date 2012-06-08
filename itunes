@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.0.1'
+version='1.0.2'
 progname=`basename $0`
 
 #  Version and help.
@@ -278,7 +278,7 @@ case "$cmd" in
     #  Navigation commands.
     play|resume|unpause)
                  _cmd_play "$@"      ;;
-    pause)       _cmd_plause "$@"    ;;
+    pause)       _cmd_pause "$@"     ;;
     stop)        _cmd_stop "$@"      ;;
     next)        _cmd_next "$@"      ;;
     prev)        _cmd_prev "$@"      ;;
