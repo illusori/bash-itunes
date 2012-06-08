@@ -215,13 +215,15 @@ function _cmd_volume() {
     else
         newvol=-1
         case "$1" in
-            "up")   newvol=$(($curvol + 10)) ;;
-            "down") newvol=$(($curvol - 10)) ;;
+            "up")     newvol=$(($curvol + 10)) ;;
+            "down")   newvol=$(($curvol - 10)) ;;
+            "mute")   _cmd_mute                ;;
+            "unmute") _cmd_unmute              ;;
             *)
                 if [ "$1" -ge 0 -a "$1" -le 100 2>&- ] ; then
                     newvol=$1
                 else
-                    _err "Volume must be one of 'up', 'down' or an integer between 0 and 100."
+                    _err "Volume must be one of 'up', 'down', 'mute', 'unmute' or an integer between 0 and 100."
                 fi
                 ;;
         esac
