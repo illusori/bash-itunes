@@ -1,7 +1,8 @@
-* bash-itunes 1.0.4 (candidate)
+* bash-itunes 1.0.4 (2012-06-08-22:00)
   * Fetch track info in single AppleScript call for speed.
   * Added "itunes vol mute" alias for "itunes mute", ditto unmute.
   * Add sysvol/sysmute/sysunmute commands.
+  * Add track position and duration to track info display.
 
 * bash-itunes 1.0.3 (2012-06-08-11:29)
   * Crank that release-schedule, eat your heart out firefox:
