@@ -8,29 +8,32 @@ Currently it supports the following commands:
 
 ```
 Navigation commands:
-    play       Start or resume playing.
-    pause      Pause playing.
-    stop       Stop playing.
-    next       Skip to next track.
-    prev       Skip back to previous track.
-    info       View info about current track.
-    shuffle    View or set shuffle status.
-    repeat     View or set repeat status.
+    play        Start or resume playing.
+    pause       Pause playing.
+    stop        Stop playing.
+    next        Skip to next track.
+    prev        Skip back to previous track.
+    info        View info about current track.
+    shuffle     View or set shuffle status.
+    repeat      View or set repeat status.
 
 Volume commands:
-    vol[ume]   View or adjust the volume.
-    mute       Mutes iTunes.
-    unmute     Umutes iTunes, restoring previous volume level.
+    vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
+    mute        Mutes iTunes.
+    unmute      Unmutes iTunes, restoring previous volume level.
+    sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
+    sysmute     Mute system sound.
+    sysunmute   Unmute system sound.
 
 Application commands:
-    open       Start iTunes running.
-    quit       Quit iTunes.
-    show       Hide the iTunes window.
-    hide       Show the iTunes window.
+    open        Start iTunes running.
+    quit        Quit iTunes.
+    show        Hide the iTunes window.
+    hide        Show the iTunes window.
 
 Additional commands:
-    version    Show version information and exit.
-    help       Show this help and exit.
+    version     Show version information and exit.
+    help        Show this help and exit.
 ```
 
 Setup
