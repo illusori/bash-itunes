@@ -1,0 +1,302 @@
+#!/bin/bash
+#
+#  A simple command-line wrapper for Apple's iTunes.
+#
+#  Install or symlink into your path and "itunes -h" or "itunes help" for help.
+#
+#  Copyright 2012 Sam Graham.  http://www.illusori.co.uk/
+#  This work is licensed under a
+#  Creative Commons Attribution-Share Alike 2.0 UK: England & Wales License
+#  http://creativecommons.org/licenses/by-sa/2.0/uk/
+#  In human-readble terms: you're free to copy, distribute and modify
+#  providing you maintain attribution and licence.
+#
+#  Use at your own risk, no fitness for purpose implied, etc, etc.
+
+version='1.0.0'
+
+#  Version and help.
+
+function _cmd_version() {
+    echo "$0 version $version"
+}
+
+function _cmd_help() {
+    _cmd_version
+    echo "Usage: $0 [-v] [-h] [-d] <command> [<args>]
+
+Switches:
+    -v         Show version information and exit.
+    -h         Show this help and exit.
+    -d         Enable debug messages, additional -d options increase verbosity.
+
+Navigation commands:
+    play       Start or resume playing.
+    pause      Pause playing.
+    stop       Stop playing.
+    next       Skip to next track.
+    prev       Skip back to previous track.
+    info       View info about current track.
+    shuffle    View or set shuffle status.
+    repeat     View or set repeat status.
+    playlist   View or choose playlist.
+    playlists  List all playlists.
+
+Volume commands:
+    vol[ume]   View or adjust the volume.
+    mute       Mutes iTunes.
+    unmute     Umutes iTunes, restoring previous volume level.
+
+Application commands:
+    open       Start iTunes running.
+    quit       Quit iTunes.
+    show       Hide the iTunes window.
+    hide       Show the iTunes window.
+
+Additional commands:
+    version    Show version information and exit.
+    help       Show this help and exit."
+}
+
+function _cmd_unknown() {
+    echo "Unknown command '$cmd', try '$0 help' for a list of valid commands."
+}
+
+#  Helper functions
+
+function _err() {
+    echo "$*" 1>&2
+}
+
+function _log() {
+    if [ "$debug" -ge "$1" ]; then
+        shift;
+        _err "$*"
+    fi
+}
+
+function _osascript() {
+    _log 3 "Run: osascript -e '$*'"
+    if [ "$debug" -gt 0 ]; then
+        osascript -e "$*"
+    else
+        osascript -e "$*" 2>&-
+    fi
+}
+
+function _tell_itunes() {
+    _osascript "tell application \"iTunes\" to $*"
+}
+
+function _show_info() {
+    prefix="$1"
+    showrating="$2"
+
+    # TODO: not very efficient to fetch one at a time
+    track=$(_tell_itunes "name of current track")
+    artist=$(_tell_itunes "artist of current track")
+    album=$(_tell_itunes "album of current track")
+    year=$(_tell_itunes "year of current track")
+    rating=$(_tell_itunes "rating of current track")
+    _log 3 "Fetched track '$track', artist '$artist', album '$album', year '$year', rating '$rating'"
+    echo -n "$prefix \"$track\""
+    if [ -n "$artist" ]; then
+        echo -n " by $artist"
+    fi
+    if [ -n "$album" ]; then
+        echo -n ", from \"$album\""
+        if [ -n "$year" -a "$year" != 0 ]; then
+            echo -n "($year)"
+        fi
+    fi
+    echo "."
+    if [ "$showrating" = 1 -a -n "$rating" -a "$rating" != 0 ]; then
+        echo "You've rated this track $rating."
+    fi
+}
+
+#  Navigation commands: play, pause, stop, next, prev, playlist
+
+function _cmd_play() {
+    _tell_itunes "play"
+    _show_info "Resuming" 0
+}
+
+function _cmd_pause() {
+    echo "Pausing iTunes."
+    _tell_itunes "play"
+}
+
+function _cmd_stop() {
+    echo "Stopping iTunes."
+    _tell_itunes "play"
+}
+
+function _cmd_next() {
+    _tell_itunes "next track"
+    _show_info "Skipping to next track," 0
+}
+
+function _cmd_prev() {
+    _tell_itunes "previous track"
+    _show_info "Skipping to previous track," 0
+}
+
+function _cmd_info() {
+    _show_info "Currently playing" 1
+}
+
+function _cmd_shuffle() {
+    if [ -z "$1" ]; then
+        curshuffle=$(_tell_itunes "shuffle of current playlist")
+        _log 3 "Fetched shuffle is '$curshuffle'"
+        if [ "$curshuffle" = "true" ]; then
+            echo "Current shuffle setting is on."
+        else
+            echo "Current shuffle setting is off."
+        fi
+    else
+        case "$1" in
+            "on")
+                echo "Switching shuffle on."
+                _tell_itunes "set shuffle of current playlist to true"
+                ;;
+            "off")
+                echo "Switching shuffle off."
+                _tell_itunes "set shuffle of current playlist to false"
+                ;;
+            *)
+                _err "Shuffle must be one of 'on' or 'off'."
+                ;;
+        esac
+    fi
+}
+
+function _cmd_repeat() {
+    if [ -z "$1" ]; then
+        currepeat=$(_tell_itunes "song repeat of current playlist")
+        _log 3 "Fetched repeat is '$currepeat'"
+        echo "Current repeat setting is $currepeat."
+    else
+        case "$1" in
+            "off" | "one" | "all")
+                echo "Switching repeat to $1."
+                _tell_itunes "set song repeat of current playlist to $1"
+                ;;
+            *)
+                _err "Repeat must be one of 'one', 'all' or 'off'."
+                ;;
+        esac
+    fi
+}
+
+function _cmd_playlist() {
+    echo TODO
+}
+
+function _cmd_playlists() {
+    echo TODO
+}
+
+#  Volume commands: volume, mute, unmute
+
+function _cmd_volume() {
+    curvol=$(_tell_itunes "sound volume as integer")
+    _log 3 "Fetched volume is '$curvol'"
+    if [ -z "$1" ]; then
+        echo "Current iTunes volume is $curvol%"
+    else
+        newvol=-1
+        case "$1" in
+            "up")   newvol=$(($curvol + 10)) ;;
+            "down") newvol=$(($curvol - 10)) ;;
+            *)
+                if [ "$1" -ge 0 -a "$1" -le 100 2>&- ] ; then
+                    newvol=$1
+                else
+                    _err "Volume must be one of 'up', 'down' or an integer between 0 and 100."
+                fi
+                ;;
+        esac
+        if [ $newvol != -1 ]; then
+            echo "Changing iTunes volume level from $curvol to $newvol%"
+            _tell_itunes "set sound volume to $newvol"
+        fi
+    fi
+}
+
+function _cmd_mute() {
+    echo "Muting iTunes."
+    _tell_itunes "set mute to true"
+}
+
+function _cmd_unmute() {
+    echo "Unmuting iTunes."
+    _tell_itunes "set mute to false"
+}
+
+#  Application commands: open, quit
+
+function _cmd_open() {
+    echo "Opening iTunes."
+    open -a iTunes
+}
+
+function _cmd_quit() {
+    echo "Quitting iTunes."
+    _tell_itunes "quit"
+}
+
+function _cmd_show() {
+    echo "Showing iTunes window."
+    _osascript "tell application \"System Events\" to set visible of process \"iTunes\" to true"
+}
+
+function _cmd_hide() {
+    echo "Hiding iTunes window."
+    _osascript "tell application \"System Events\" to set visible of process \"iTunes\" to false"
+}
+
+#  Argument processing and dispatch
+
+debug=0
+while getopts "hvd" "OPTNAME";
+do
+    case $OPTNAME in
+        h) _cmd_help;    exit 0  ;;
+        v) _cmd_version; exit 0  ;;
+        d) debug=$(($debug + 1)) ;;
+        *) exit -1               ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+cmd=$1
+shift
+case "$cmd" in
+    #  Navigation commands.
+    play|resume|unpause)
+                 _cmd_play "$@"      ;;
+    pause)       _cmd_plause "$@"    ;;
+    stop)        _cmd_stop "$@"      ;;
+    next)        _cmd_next "$@"      ;;
+    prev)        _cmd_prev "$@"      ;;
+    info)        _cmd_info "$@"      ;;
+    shuffle)     _cmd_shuffle "$@"   ;;
+    repeat)      _cmd_repeat "$@"    ;;
+    playlist)    _cmd_playlist "$@"  ;;
+    playlists)   _cmd_playlists "$@" ;;
+    #  Volume commands.
+    vol|volume)  _cmd_volume "$@"    ;;
+    mute)        _cmd_mute "$@"      ;;
+    unmute)      _cmd_unmute "$@"    ;;
+    #  Application commands.
+    open)        _cmd_open "$@"      ;;
+    quit)        _cmd_quit "$@"      ;;
+    show|reveal) _cmd_show "$@"      ;;
+    hide)        _cmd_hide "$@"      ;;
+    #  Extra commands.
+    version)     _cmd_version "$@"   ;;
+    help)        _cmd_help "$@"      ;;
+    *)           _cmd_unknown "$@"   ;;
+esac

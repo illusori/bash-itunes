@@ -1,0 +1,40 @@
+Bash iTunes
+===========
+
+Bash iTunes is a command-line wrapper for iTunes, letting you easily
+control iTunes from the terminal or over SSH.
+
+Currently it supports the following commands:
+
+Navigation commands:
+    play       Start or resume playing.
+    pause      Pause playing.
+    stop       Stop playing.
+    next       Skip to next track.
+    prev       Skip back to previous track.
+    info       View info about current track.
+    shuffle    View or set shuffle status.
+    repeat     View or set repeat status.
+
+Volume commands:
+    vol[ume]   View or adjust the volume.
+    mute       Mutes iTunes.
+    unmute     Umutes iTunes, restoring previous volume level.
+
+Application commands:
+    open       Start iTunes running.
+    quit       Quit iTunes.
+    show       Hide the iTunes window.
+    hide       Show the iTunes window.
+
+Additional commands:
+    version    Show version information and exit.
+    help       Show this help and exit.
+
+Setup
+-----
+
+Install the itunes script somewhere on your path, `~/bin` is
+the usual choice, and type `itunes help` to get started.
+
+Have fun.
