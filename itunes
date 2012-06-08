@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.0.0'
+version='1.0.1'
 progname=`basename $0`
 
 #  Version and help.
