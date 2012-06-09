@@ -116,25 +116,21 @@ set AppleScript's text item delimiters to \"\\n\"
 set ret to ret as text
 set AppleScript's text item delimiters to old_delim
 ret")
-
     _log 4 "result '$result'"
 
-    _read_rows_from_value_lines track "$result" $columns
+    _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
 }
 
-#  I am _so_ going to burn in hell.
-#  Read lines of values from arg 2 and store them in
-#  the arrays of name <prefix>_<column>, using prefix passed in arg 1
-#  and column names passed as args 3+
-function _read_rows_from_value_lines() {
+function _read_rows_from_value_lines_grouped_by_column() {
     local prefix="$1"
     local content="$2"
     shift 2
     local columns
     read -r -a columns <<< "$*"
 
+    local row_count=$(($(wc -l <<< "$content") / ${#columns[*]}))
+
     for column in "${columns[@]}"; do
-        #echo "Scrubbing ${prefix}_${column}"
         unset "${prefix}_${column}"
     done
 
@@ -146,12 +142,11 @@ function _read_rows_from_value_lines() {
         #  Ho hum, I gave up and used eval, couldn't get this working with $(())
         eval "${prefix}_${column}[${row_idx}]='$value'"
 
-        column_idx=$((column_idx + 1))
-        if [ "$column_idx" -ge "${#columns[*]}" ]; then
-            column_idx=0
-            row_idx=$((row_idx + 1))
+        row_idx=$((row_idx + 1))
+        if [ "$row_idx" -ge "$row_count" ]; then
+            row_idx=0
+            column_idx=$((column_idx + 1))
         fi
-        #echo "Column is $column, column_idx now $column_idx, row_idx now $row_idx"
     done <<< "$content"
 }
 
@@ -262,7 +257,13 @@ function _cmd_playlist() {
 }
 
 function _cmd_playlists() {
-    echo TODO
+    _fetch_from_itunes "playlists" playlist name time
+    echo "Playlists"
+    local playlist_idx=0
+    while [ -n "${playlist_name[playlist_idx]}" ]; do
+        echo "  ${playlist_name[playlist_idx]} (${playlist_time[playlist_idx]})"
+        playlist_idx=$((playlist_idx + 1))
+    done
 }
 
 #  Volume commands: volume, mute, unmute
