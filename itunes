@@ -80,7 +80,7 @@ function _log() {
 }
 
 function _osascript() {
-    _log 3 "Run: osascript -e \"$*\""
+    _log 2 "Run: osascript -e \"$*\""
     if [ "$debug" -gt 0 ]; then
         osascript -e "$*"
     else
@@ -140,13 +140,15 @@ function _read_rows_from_value_lines_grouped_by_column() {
     while read value; do
         column=${columns[column_idx]}
         #  Ho hum, I gave up and used eval, couldn't get this working with $(())
-        eval "${prefix}_${column}[${row_idx}]='$value'"
+        printf -v value "%q" "$value"
+        eval "${prefix}_${column}[${row_idx}]=$value"
 
         row_idx=$((row_idx + 1))
         if [ "$row_idx" -ge "$row_count" ]; then
             row_idx=0
             column_idx=$((column_idx + 1))
         fi
+        _log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx, value $value"
     done <<< "$content"
 }
 
@@ -253,7 +255,26 @@ function _cmd_repeat() {
 }
 
 function _cmd_playlist() {
-    echo TODO
+    if [ -z "$1" ]; then
+        _fetch_from_itunes "current playlist" playlist name time
+        _fetch_from_itunes "current track" current_track id
+        _fetch_from_itunes "every track of current playlist" track name artist album year rating time id
+
+        echo "Currently listening to playlist \"${playlist_name}\" (${playlist_time}):"
+
+        local track_idx=0
+        while [ -n "${track_name[track_idx]}" ]; do
+            if [ "$current_track_id" = "${track_id[track_idx]}" ]; then
+                echo -n "* "
+            else
+                echo -n "  "
+            fi
+            echo "\"${track_name[track_idx]}\" by ${track_artist[track_idx]} (${track_time[track_idx]})"
+            track_idx=$((track_idx + 1))
+        done
+    else
+        echo TODO
+    fi
 }
 
 function _cmd_playlists() {

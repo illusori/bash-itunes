@@ -16,6 +16,7 @@ Navigation commands:
     info        View info about current track.
     shuffle     View or set shuffle status.
     repeat      View or set repeat status.
+    playlist    View or choose playlist.
     playlists   List all playlists.
 
 Volume commands:

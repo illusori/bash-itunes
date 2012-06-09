@@ -1,6 +1,7 @@
 * bash-itunes 1.0.5 (candidate)
   * Improved way of fetching structured data from AppleScript.
   * Added basic listing of playlists.
+  * Added listing of tracks in current playlist.
 
 * bash-itunes 1.0.4 (2012-06-08-22:00)
   * Fetch track info in single AppleScript call for speed.
