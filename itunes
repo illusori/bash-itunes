@@ -80,7 +80,7 @@ function _log() {
 }
 
 function _osascript() {
-    _log 3 "Run: osascript -e '$*'"
+    _log 3 "Run: osascript -e \"$*\""
     if [ "$debug" -gt 0 ]; then
         osascript -e "$*"
     else
@@ -92,42 +92,93 @@ function _tell_itunes() {
     _osascript "tell application \"iTunes\" to $*"
 }
 
-function _show_info() {
-    prefix="$1"
-    showrating="$2"
+#  Fetch from iTunes from the data-structures in $1 into the array
+#  variables constructed from prefix $2 and column names $3+ the
+#  given columns in the data-structure.
+#  If that's clear.
+#  No?
+#  Anyone?
+function _fetch_from_itunes() {
+    local structure="$1"
+    local prefix="$2"
+    shift 2
+    local columns="$*"
+    local script_columns="${columns// /, }"
 
-    #  This insanity is to avoid the pain of fetching details one at a time
-    #  It will break if you've got pipes | in the track details. I tried with
-    #  newlines but $IFS wasn't happy for some reason.
-    fetched_details=$(_osascript "tell application \"iTunes\" to set details to (name, artist, album, year, rating, time) of current track
-set AppleScript's text item delimiters to \"|\"
-details as text")
-    IFS="|" read -r -a details <<< "$fetched_details"
-    track=${details[0]}
-    artist=${details[1]}
-    album=${details[2]}
-    year=${details[3]}
-    rating=${details[4]}
-    tracktime=${details[5]}
-    _log 3 "Fetched track '$track', artist '$artist', album '$album', year '$year', rating '$rating', time '$tracktime'"
-    trackpos=$(_tell_itunes "player position as integer")
-    trackmin=$((trackpos / 60))
-    tracksec=$(printf "%02d" $((trackpos % 60)))
-    trackpos="${trackmin}:${tracksec}"
-    _log 3 "Fetched trackpos '$trackpos', ${trackmin}:${tracksec}"
-    echo -n "$prefix \"$track\""
-    if [ -n "$artist" ]; then
-        echo -n " by $artist"
+    _log 4 "structure '$structure'"
+    _log 4 "prefix '$prefix'"
+    _log 4 "columns '$columns'"
+    _log 4 "script_columns '$script_columns'"
+
+    local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $structure
+set old_delim to AppleScript's text item delimiters
+set AppleScript's text item delimiters to \"\\n\"
+set ret to ret as text
+set AppleScript's text item delimiters to old_delim
+ret")
+
+    _log 4 "result '$result'"
+
+    _read_rows_from_value_lines track "$result" $columns
+}
+
+#  I am _so_ going to burn in hell.
+#  Read lines of values from arg 2 and store them in
+#  the arrays of name <prefix>_<column>, using prefix passed in arg 1
+#  and column names passed as args 3+
+function _read_rows_from_value_lines() {
+    local prefix="$1"
+    local content="$2"
+    shift 2
+    local columns
+    read -r -a columns <<< "$*"
+
+    for column in "${columns[@]}"; do
+        #echo "Scrubbing ${prefix}_${column}"
+        unset "${prefix}_${column}"
+    done
+
+    local row_idx=0
+    local column_idx=0
+    local value
+    while read value; do
+        column=${columns[column_idx]}
+        #  Ho hum, I gave up and used eval, couldn't get this working with $(())
+        eval "${prefix}_${column}[${row_idx}]='$value'"
+
+        column_idx=$((column_idx + 1))
+        if [ "$column_idx" -ge "${#columns[*]}" ]; then
+            column_idx=0
+            row_idx=$((row_idx + 1))
+        fi
+        #echo "Column is $column, column_idx now $column_idx, row_idx now $row_idx"
+    done <<< "$content"
+}
+
+function _show_info() {
+    local prefix="$1"
+    local showrating="$2"
+
+    _fetch_from_itunes "current track" track name artist album year rating time
+    _log 3 "Fetched track '$track_name', artist '$track_artist', album '$track_album', year '$track_year', rating '$track_rating', time '$track_time'"
+    local track_pos=$(_tell_itunes "player position as integer")
+    local track_min=$((track_pos / 60))
+    local track_sec=$(printf "%02d" $((track_pos % 60)))
+    track_pos="${track_min}:${track_sec}"
+    _log 3 "Fetched trackpos '$track_pos', ${track_min}:${track_sec}"
+    echo -n "$prefix \"$track_name\""
+    if [ -n "$track_artist" ]; then
+        echo -n " by $track_artist"
     fi
-    if [ -n "$album" ]; then
-        echo -n ", from \"$album\""
-        if [ -n "$year" -a "$year" != 0 ]; then
-            echo -n " ($year)"
+    if [ -n "$track_album" ]; then
+        echo -n ", from \"$track_album\""
+        if [ -n "$track_year" -a "$track_year" != 0 ]; then
+            echo -n " ($track_year)"
         fi
     fi
-    echo " ($trackpos of $tracktime)"
-    if [ "$showrating" = 1 -a -n "$rating" -a "$rating" != 0 ]; then
-        echo "You've rated this track $rating."
+    echo " ($track_pos of $track_time)"
+    if [ "$showrating" = 1 -a -n "$track_rating" -a "$track_rating" != 0 ]; then
+        echo "You've rated this track $track_rating."
     fi
 }
 
