@@ -147,6 +147,8 @@ set ret to ret as text
 set AppleScript's text item delimiters to old_delim
 ret")
     else
+        # TODO: FML, unlike above, this doesn't syntax doesn't work on
+        #       both list vs object source automagickly.
         local result=$(_osascript "tell application \"iTunes\"
     set ret to {}
     repeat with v in $source
@@ -237,6 +239,7 @@ function _fetch_playlists() {
 function _scrub_playlists() {
     local prefix="$1"
     _scrub_rows "$prefix" $_playlist_columns
+    _scrub_rows "$prefix" count_tracks
 }
 
 #  Fetchers/scrubbers for specific global objects.
@@ -337,6 +340,7 @@ function _show_playlist() {
     echo -n $(_pluralize "${count_tracks}" 'track')
     echo -n ")"
     if [ "$brief" = 0 ]; then
+        echo ":"
         local track_prefix="${row_prefix}_tracks"
         local track_idx=0
         eval "local track_name=\${${track_prefix}_name[track_idx]}"
@@ -355,6 +359,17 @@ function _show_playlist() {
     else
         echo
     fi
+}
+
+function _show_current_playlist() {
+    local preamble="$1"
+    local brief="${2:-0}"
+
+    _fetch_current_track
+    _fetch_current_playlist
+    _fetch_tracks "every track of current playlist" current_playlist_tracks
+
+    _show_playlist current_playlist 0 $brief "$preamble"
 }
 
 #  Navigation commands: play, pause, stop, next, prev, playlist
@@ -388,7 +403,39 @@ function _cmd_prev() {
 }
 
 function _cmd_info() {
-    _show_current_track "Currently playing"
+    if [ -z "$*" ]; then
+        _cmd_info_track
+    else
+        local cmd="$1"
+        shift
+        case "$cmd" in
+            track)
+                _cmd_info_track "$@"
+                ;;
+            playlist)
+                _cmd_info_playlist "$@"
+                ;;
+        esac
+    fi
+}
+
+function _cmd_info_track() {
+    if [ -z "$*" ]; then
+        _show_current_track "Currently playing"
+    else
+        _fetch_tracks "track \"$*\"" track
+        _show_track track 0 0
+    fi
+}
+
+function _cmd_info_playlist() {
+    if [ -z "$*" ]; then
+        _show_current_playlist "Currently listening to playlist" 0
+    else
+        _fetch_playlists "playlist \"$*\"" playlist
+        _fetch_tracks "every track of playlist \"$*\"" playlist_tracks
+        _show_playlist playlist 0 0
+    fi
 }
 
 function _cmd_shuffle() {
@@ -437,11 +484,7 @@ function _cmd_repeat() {
 
 function _cmd_playlist() {
     if [ -z "$1" ]; then
-        _fetch_current_track
-        _fetch_current_playlist
-        _fetch_tracks "every track of current playlist" current_playlist_tracks
-
-        _show_playlist current_playlist 0 0 "Currently listening to playlist"
+        _cmd_info_playlist
     else
         _tell_itunes "play playlist \"$*\""
         _scrub_current_track
