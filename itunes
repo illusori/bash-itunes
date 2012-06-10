@@ -99,18 +99,15 @@ function _tell_itunes() {
 #  No?
 #  Anyone?
 function _fetch_from_itunes() {
-    local structure="$1"
+    local source="$1"
     local prefix="$2"
     shift 2
     local columns="$*"
     local script_columns="${columns// /, }"
 
-    _log 4 "structure '$structure'"
-    _log 4 "prefix '$prefix'"
-    _log 4 "columns '$columns'"
-    _log 4 "script_columns '$script_columns'"
+    #_log 4 "source '$structure', prefix '$prefix', columns '$columns', script_columns '$script_columns'"
 
-    local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $structure
+    local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $source
 set old_delim to AppleScript's text item delimiters
 set AppleScript's text item delimiters to \"\\n\"
 set ret to ret as text
@@ -121,6 +118,10 @@ ret")
     _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
 }
 
+#  Low-level row/rowset fetching/clearing. This stuff is nasty.
+
+#  This function is lifted from my bash-snippets repo on GitHub,
+#  gawp in horror at its unspeakable glory.
 function _read_rows_from_value_lines_grouped_by_column() {
     local prefix="$1"
     local content="$2"
@@ -151,6 +152,75 @@ function _read_rows_from_value_lines_grouped_by_column() {
         _log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx, value $value"
     done <<< "$content"
 }
+
+function _scrub_rows() {
+    local prefix="$1"
+    shift
+    local columns="$@"
+
+    for column in $columns; do
+        local full_column="${prefix}_${column}"
+        _log 6 "Scrubbing \$$full_column"
+        unset $full_column
+    done
+}
+
+#  Schema stuff.
+
+_track_columns="name artist album year rating time id"
+_playlist_columns="name time id"
+
+#  Fetchers/scrubbers for the objects in the schema.
+
+function _fetch_tracks() {
+    local source="$1"
+    local prefix="$2"
+    _fetch_from_itunes "$source" "$prefix" $_track_columns
+}
+function _scrub_tracks() {
+    local prefix="$1"
+    _scrub_rows "$prefix" $_track_columns
+}
+
+function _fetch_playlists() {
+    local source="$1"
+    local prefix="$2"
+    _fetch_from_itunes "$source" "$prefix" $_playlist_columns
+}
+function _scrub_playlists() {
+    local prefix="$1"
+    _scrub_rows "$prefix" $_playlist_columns
+}
+
+#  Fetchers/scrubbers for specific global objects.
+
+function _fetch_current_track() {
+    if [ -z "$current_track_name" ]; then
+        _fetch_tracks "current track" current_track
+    fi
+    if [ -z "$current_track_pos" ]; then
+        current_track_pos=$(_tell_itunes "player position as integer")
+        local min=$((current_track_pos / 60))
+        local sec=$(printf "%02d" $((current_track_pos % 60)))
+        current_track_pos="${min}:${sec}"
+        _log 3 "Fetched trackpos '$current_track_pos'"
+    fi
+}
+function _scrub_current_track() {
+    _scrub_tracks "current_track"
+}
+
+function _fetch_current_playlist() {
+    if [ -z "$current_playlist_name" ]; then
+        _fetch_playlists "current playlist" current_playlist
+    fi
+}
+function _scrub_current_playlist() {
+    _scrub_playlists "current_playlist"
+}
+
+
+#  Views.
 
 function _show_track() {
     local row_prefix="$1"
@@ -192,28 +262,6 @@ function _show_track() {
 
 }
 
-function _fetch_current_track() {
-    if [ -z "$current_track_name" ]; then
-        _fetch_from_itunes "current track" current_track name artist album year rating time id
-        _log 3 "Fetched track '$current_track_name', artist '$current_track_artist', album '$current_track_album', year '$current_track_year', rating '$current_track_rating', time '$current_track_time'"
-    fi
-    if [ -z "$current_track_pos" ]; then
-        current_track_pos=$(_tell_itunes "player position as integer")
-        local min=$((current_track_pos / 60))
-        local sec=$(printf "%02d" $((current_track_pos % 60)))
-        current_track_pos="${min}:${sec}"
-        _log 3 "Fetched trackpos '$current_track_pos'"
-    fi
-}
-
-function _invalidate_current_track() {
-    for column in track name artist year rating time id; do
-        local full_column="current_track_$column"
-        #_log 6 "Scrubbing \$$full_column"
-        unset $full_column
-    done
-}
-
 function _show_current_track() {
     local preamble="$1"
     local brief="${2:-0}"
@@ -226,6 +274,7 @@ function _show_current_track() {
 
 function _cmd_play() {
     _tell_itunes "play"
+    _scrub_current_track
     _show_current_track "Resuming" 1
 }
 
@@ -241,11 +290,13 @@ function _cmd_stop() {
 
 function _cmd_next() {
     _tell_itunes "next track"
+    _scrub_current_track
     _show_current_track "Skipping to next track," 1
 }
 
 function _cmd_prev() {
     _tell_itunes "previous track"
+    _scrub_current_track
     _show_current_track "Skipping to previous track," 1
 }
 
@@ -300,10 +351,10 @@ function _cmd_repeat() {
 function _cmd_playlist() {
     if [ -z "$1" ]; then
         _fetch_current_track
-        _fetch_from_itunes "current playlist" playlist name time
-        _fetch_from_itunes "every track of current playlist" track name artist album year rating time id
+        _fetch_current_playlist
+        _fetch_tracks "every track of current playlist" track
 
-        echo "Currently listening to playlist \"${playlist_name}\" (${playlist_time}):"
+        echo "Currently listening to playlist \"${current_playlist_name}\" (${current_playlist_time}):"
 
         local track_idx=0
         while [ -n "${track_name[track_idx]}" ]; do
@@ -318,8 +369,10 @@ function _cmd_playlist() {
         done
     else
         _tell_itunes "play playlist \"$*\""
-        _fetch_from_itunes "current playlist" playlist name time
-        _show_current_track "Now listening to playlist \"${playlist_name}\" (${playlist_time}), playing" 1
+        _scrub_current_track
+        _scrub_current_playlist
+        _fetch_current_playlist
+        _show_current_track "Now listening to playlist \"${current_playlist_name}\" (${current_playlist_time}), playing" 1
     fi
 }
 
