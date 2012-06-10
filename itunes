@@ -152,38 +152,81 @@ function _read_rows_from_value_lines_grouped_by_column() {
     done <<< "$content"
 }
 
-function _show_info() {
-    local prefix="$1"
-    local showrating="$2"
+function _show_track() {
+    local row_prefix="$1"
+    local row_idx="${2:-0}"
+    local brief="${3:-0}"
+    local preamble="$4"
 
-    _fetch_from_itunes "current track" track name artist album year rating time
-    _log 3 "Fetched track '$track_name', artist '$track_artist', album '$track_album', year '$track_year', rating '$track_rating', time '$track_time'"
-    local track_pos=$(_tell_itunes "player position as integer")
-    local track_min=$((track_pos / 60))
-    local track_sec=$(printf "%02d" $((track_pos % 60)))
-    track_pos="${track_min}:${track_sec}"
-    _log 3 "Fetched trackpos '$track_pos', ${track_min}:${track_sec}"
-    echo -n "$prefix \"$track_name\""
-    if [ -n "$track_artist" ]; then
-        echo -n " by $track_artist"
+    #  Ho ho.
+    eval "local name=\${${row_prefix}_name[row_idx]}"
+    eval "local artist=\${${row_prefix}_artist[row_idx]}"
+    eval "local album=\${${row_prefix}_album[row_idx]}"
+    eval "local year=\${${row_prefix}_year[row_idx]}"
+    eval "local rating=\${${row_prefix}_rating[row_idx]}"
+    eval "local time=\${${row_prefix}_time[row_idx]}"
+    eval "local id=\${${row_prefix}_id[row_idx]}"
+
+    if [ -n "$preamble" ]; then
+        preamble="$preamble "
     fi
-    if [ -n "$track_album" ]; then
-        echo -n ", from \"$track_album\""
-        if [ -n "$track_year" -a "$track_year" != 0 ]; then
-            echo -n " ($track_year)"
+
+    echo -n "$preamble\"$name\""
+    if [ -n "$artist" ]; then
+        echo -n " by $artist"
+    fi
+    if [ -n "$album" ]; then
+        echo -n ", from \"$album\""
+        if [ -n "$year" -a "$year" != 0 ]; then
+            echo -n " ($year)"
         fi
     fi
-    echo " ($track_pos of $track_time)"
-    if [ "$showrating" = 1 -a -n "$track_rating" -a "$track_rating" != 0 ]; then
-        echo "You've rated this track $track_rating."
+    if [ -n "$current_track_id" -a -n "$current_track_pos" -a "$current_track_id" = "$id" ]; then
+        echo " ($current_track_pos of $time)"
+    else
+        echo " ($time)"
     fi
+    if [ "$brief" = 0 -a -n "$rating" -a "$rating" != 0 ]; then
+        echo "You've rated this track $rating."
+    fi
+
+}
+
+function _fetch_current_track() {
+    if [ -z "$current_track_name" ]; then
+        _fetch_from_itunes "current track" current_track name artist album year rating time id
+        _log 3 "Fetched track '$current_track_name', artist '$current_track_artist', album '$current_track_album', year '$current_track_year', rating '$current_track_rating', time '$current_track_time'"
+    fi
+    if [ -z "$current_track_pos" ]; then
+        current_track_pos=$(_tell_itunes "player position as integer")
+        local min=$((current_track_pos / 60))
+        local sec=$(printf "%02d" $((current_track_pos % 60)))
+        current_track_pos="${min}:${sec}"
+        _log 3 "Fetched trackpos '$current_track_pos'"
+    fi
+}
+
+function _invalidate_current_track() {
+    for column in track name artist year rating time id; do
+        local full_column="current_track_$column"
+        #_log 6 "Scrubbing \$$full_column"
+        unset $full_column
+    done
+}
+
+function _show_current_track() {
+    local preamble="$1"
+    local brief="${2:-0}"
+
+    _fetch_current_track
+    _show_track current_track 0 $brief "$preamble"
 }
 
 #  Navigation commands: play, pause, stop, next, prev, playlist
 
 function _cmd_play() {
     _tell_itunes "play"
-    _show_info "Resuming" 0
+    _show_current_track "Resuming" 1
 }
 
 function _cmd_pause() {
@@ -198,16 +241,16 @@ function _cmd_stop() {
 
 function _cmd_next() {
     _tell_itunes "next track"
-    _show_info "Skipping to next track," 0
+    _show_current_track "Skipping to next track," 1
 }
 
 function _cmd_prev() {
     _tell_itunes "previous track"
-    _show_info "Skipping to previous track," 0
+    _show_current_track "Skipping to previous track," 1
 }
 
 function _cmd_info() {
-    _show_info "Currently playing" 1
+    _show_current_track "Currently playing"
 }
 
 function _cmd_shuffle() {
@@ -256,8 +299,8 @@ function _cmd_repeat() {
 
 function _cmd_playlist() {
     if [ -z "$1" ]; then
+        _fetch_current_track
         _fetch_from_itunes "current playlist" playlist name time
-        _fetch_from_itunes "current track" current_track id
         _fetch_from_itunes "every track of current playlist" track name artist album year rating time id
 
         echo "Currently listening to playlist \"${playlist_name}\" (${playlist_time}):"
@@ -269,11 +312,14 @@ function _cmd_playlist() {
             else
                 echo -n "  "
             fi
-            echo "\"${track_name[track_idx]}\" by ${track_artist[track_idx]} (${track_time[track_idx]})"
+            _show_track track $track_idx 1
+#            echo "\"${track_name[track_idx]}\" by ${track_artist[track_idx]} (${track_time[track_idx]})"
             track_idx=$((track_idx + 1))
         done
     else
-        echo TODO
+        _tell_itunes "play playlist \"$*\""
+        _fetch_from_itunes "current playlist" playlist name time
+        _show_current_track "Now listening to playlist \"${playlist_name}\" (${playlist_time}), playing" 1
     fi
 }
 
