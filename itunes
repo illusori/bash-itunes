@@ -79,6 +79,18 @@ function _log() {
     fi
 }
 
+function _pluralize() {
+    if [ "$1" = "1" ]; then
+        echo "$1 $2"
+    else
+        if [ -n "$3" ]; then
+            echo "$1 $3"
+        else
+            echo "$1 ${2}s"
+        fi
+    fi
+}
+
 function _osascript() {
     _log 2 "Run: osascript -e \"$*\""
     if [ "$debug" -gt 0 ]; then
@@ -100,19 +112,53 @@ function _tell_itunes() {
 #  Anyone?
 function _fetch_from_itunes() {
     local source="$1"
+    local use_loop=0
+    if [ "$source" = "LOOP" ]; then
+        use_loop=1
+        source="$2"
+        shift
+    fi
     local prefix="$2"
     shift 2
-    local columns="$*"
-    local script_columns="${columns// /, }"
+    #  Yet more hacks, this allows multi-word AppleScript properties
+    #  such as "database id" to end up in "database_id".
+    #  You can also do this by messing with $IFS and ${var//search/replace}
+    #  but, although I got it working, I had a brief outbreak of sanity and
+    #  chose this instead...
+    local columns=''
+    local script_columns=''
+    for column in "$@"; do
+        columns="${columns} ${column// /_}"
+        script_columns="${script_columns}, ${column}"
+    done
+    columns="${columns:1}"
+    script_columns="${script_columns:2}"
 
-    #_log 4 "source '$structure', prefix '$prefix', columns '$columns', script_columns '$script_columns'"
+    _log 4 "source '$structure', prefix '$prefix', columns '$columns', script_columns '$script_columns'"
 
-    local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $source
+    #  Best if we don't loop within AppleScript, it can be painfully slow
+    #  for large arrays, but on the other hand, for columns that are
+    #  actually expressions rather than properties, we appear to have to loop.
+    if [ "$use_loop" = 0 ]; then
+        local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $source
 set old_delim to AppleScript's text item delimiters
 set AppleScript's text item delimiters to \"\\n\"
 set ret to ret as text
 set AppleScript's text item delimiters to old_delim
 ret")
+    else
+        local result=$(_osascript "tell application \"iTunes\"
+    set ret to {}
+    repeat with v in $source
+        copy ($script_columns) of v to the end of ret
+    end repeat
+end tell
+set old_delim to AppleScript's text item delimiters
+set AppleScript's text item delimiters to \"\\n\"
+set ret to ret as text
+set AppleScript's text item delimiters to old_delim
+ret")
+    fi
     _log 4 "result '$result'"
 
     _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
@@ -149,7 +195,7 @@ function _read_rows_from_value_lines_grouped_by_column() {
             row_idx=0
             column_idx=$((column_idx + 1))
         fi
-        _log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx, value $value"
+        #_log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx, value $value"
     done <<< "$content"
 }
 
@@ -186,6 +232,7 @@ function _fetch_playlists() {
     local source="$1"
     local prefix="$2"
     _fetch_from_itunes "$source" "$prefix" $_playlist_columns
+    _fetch_from_itunes LOOP "$source" "$prefix" "count tracks"
 }
 function _scrub_playlists() {
     local prefix="$1"
@@ -270,6 +317,46 @@ function _show_current_track() {
     _show_track current_track 0 $brief "$preamble"
 }
 
+function _show_playlist() {
+    local row_prefix="$1"
+    local row_idx="${2:-0}"
+    local brief="${3:-0}"
+    local preamble="$4"
+
+    #  Ho ho.
+    eval "local name=\${${row_prefix}_name[row_idx]}"
+    eval "local time=\${${row_prefix}_time[row_idx]}"
+    eval "local id=\${${row_prefix}_id[row_idx]}"
+    eval "local count_tracks=\${${row_prefix}_count_tracks[row_idx]}"
+
+    if [ -n "$preamble" ]; then
+        preamble="$preamble "
+    fi
+
+    echo -n "$preamble\"${name}\" (${time}) ("
+    echo -n $(_pluralize "${count_tracks}" 'track')
+    echo -n ")"
+    if [ "$brief" = 0 ]; then
+        local track_prefix="${row_prefix}_tracks"
+        local track_idx=0
+        eval "local track_name=\${${track_prefix}_name[track_idx]}"
+        eval "local track_id=\${${track_prefix}_id[track_idx]}"
+        while [ -n "$track_name" ]; do
+            if [ "$current_track_id" = "$track_id" ]; then
+                echo -n "* "
+            else
+                echo -n "  "
+            fi
+            _show_track $track_prefix $track_idx 1
+            track_idx=$((track_idx + 1))
+            eval "track_name=\${${track_prefix}_name[track_idx]}"
+            eval "track_id=\${${track_prefix}_id[track_idx]}"
+        done
+    else
+        echo
+    fi
+}
+
 #  Navigation commands: play, pause, stop, next, prev, playlist
 
 function _cmd_play() {
@@ -352,21 +439,9 @@ function _cmd_playlist() {
     if [ -z "$1" ]; then
         _fetch_current_track
         _fetch_current_playlist
-        _fetch_tracks "every track of current playlist" track
+        _fetch_tracks "every track of current playlist" current_playlist_tracks
 
-        echo "Currently listening to playlist \"${current_playlist_name}\" (${current_playlist_time}):"
-
-        local track_idx=0
-        while [ -n "${track_name[track_idx]}" ]; do
-            if [ "$current_track_id" = "${track_id[track_idx]}" ]; then
-                echo -n "* "
-            else
-                echo -n "  "
-            fi
-            _show_track track $track_idx 1
-#            echo "\"${track_name[track_idx]}\" by ${track_artist[track_idx]} (${track_time[track_idx]})"
-            track_idx=$((track_idx + 1))
-        done
+        _show_playlist current_playlist 0 0 "Currently listening to playlist"
     else
         _tell_itunes "play playlist \"$*\""
         _scrub_current_track
@@ -377,11 +452,11 @@ function _cmd_playlist() {
 }
 
 function _cmd_playlists() {
-    _fetch_from_itunes "playlists" playlist name time
+    _fetch_playlists "playlists" playlist
     echo "Playlists"
     local playlist_idx=0
     while [ -n "${playlist_name[playlist_idx]}" ]; do
-        echo "  ${playlist_name[playlist_idx]} (${playlist_time[playlist_idx]})"
+        _show_playlist playlist $playlist_idx 1 " "
         playlist_idx=$((playlist_idx + 1))
     done
 }
