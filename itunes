@@ -147,11 +147,9 @@ set ret to ret as text
 set AppleScript's text item delimiters to old_delim
 ret")
     else
-        # TODO: FML, unlike above, this doesn't syntax doesn't work on
-        #       both list vs object source automagickly.
         local result=$(_osascript "tell application \"iTunes\"
     set ret to {}
-    repeat with v in $source
+    repeat with v in $source as list
         copy ($script_columns) of v to the end of ret
     end repeat
 end tell
