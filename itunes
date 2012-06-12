@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.0.4'
+version='1.1.0'
 progname=`basename $0`
 
 #  Version and help.
@@ -38,6 +38,7 @@ Navigation commands:
     next        Skip to next track.
     prev        Skip back to previous track.
     info        View info about current track.
+    search      Search for tracks.
     shuffle     View or set shuffle status.
     repeat      View or set repeat status.
     playlist    View or choose playlist.
@@ -149,15 +150,17 @@ function _fetch_from_itunes() {
     #  actually expressions rather than properties, we appear to have to loop.
     if [ "$use_loop" = 0 ]; then
         local result=$(_ask_itunes "set ret to ($script_columns) of $source")
+        _log 4 "result '$result'"
+        _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
     else
         local result=$(_ask_itunes "set ret to {}
             repeat with v in $source as list
                 copy ($script_columns) of v to the end of ret
             end repeat")
+        _log 4 "result '$result'"
+        _read_rows_from_value_lines "$prefix" "$result" $columns
     fi
-    _log 4 "result '$result'"
 
-    _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
 }
 
 #  Low-level row/rowset fetching/clearing. This stuff is nasty.
@@ -194,6 +197,35 @@ function _read_rows_from_value_lines_grouped_by_column() {
         #_log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx, value $value"
     done <<< "$content"
 }
+function _read_rows_from_value_lines() {
+    local prefix="$1"
+    local content="$2"
+    shift 2
+    local columns
+    read -r -a columns <<< "$*"
+
+    for column in "${columns[@]}"; do
+        #echo "Scrubbing ${prefix}_${column}"
+        unset "${prefix}_${column}"
+    done
+
+    local row_idx=0
+    local column_idx=0
+    local value
+    while read value; do
+        column=${columns[column_idx]}
+        #  Ho hum, I gave up and used eval, couldn't get this working with $(())
+        printf -v value "%q" "$value"
+        eval "${prefix}_${column}[${row_idx}]=$value"
+
+        column_idx=$((column_idx + 1))
+        if [ "$column_idx" -ge "${#columns[*]}" ]; then
+            column_idx=0
+            row_idx=$((row_idx + 1))
+        fi
+        #_log 5 "Column is $column, column_idx now $column_idx, row_idx now $row_idx"
+    done <<< "$content"
+}
 
 function _scrub_rows() {
     local prefix="$1"
@@ -215,9 +247,7 @@ _playlist_columns="name time id"
 #  Fetchers/scrubbers for the objects in the schema.
 
 function _fetch_tracks() {
-    local source="$1"
-    local prefix="$2"
-    _fetch_from_itunes "$source" "$prefix" $_track_columns
+    _fetch_from_itunes "$@" $_track_columns
 }
 function _scrub_tracks() {
     local prefix="$1"
@@ -227,7 +257,7 @@ function _scrub_tracks() {
 function _fetch_playlists() {
     local source="$1"
     local prefix="$2"
-    _fetch_from_itunes "$source" "$prefix" $_playlist_columns
+    _fetch_from_itunes "$@" $_playlist_columns
     _fetch_from_itunes LOOP "$source" "$prefix" "count tracks"
 }
 function _scrub_playlists() {
@@ -314,6 +344,26 @@ function _show_current_track() {
     _show_track current_track 0 $brief "$preamble"
 }
 
+function _show_tracks() {
+    local prefix="$1"
+    local brief="${2:-0}"
+
+    local track_idx=0
+    eval "local track_name=\${${prefix}_name[track_idx]}"
+    eval "local track_id=\${${prefix}_id[track_idx]}"
+    while [ -n "$track_name" ]; do
+        if [ "$current_track_id" = "$track_id" ]; then
+            echo -n "* "
+        else
+            echo -n "  "
+        fi
+        _show_track $prefix $track_idx $brief
+        track_idx=$((track_idx + 1))
+        eval "track_name=\${${prefix}_name[track_idx]}"
+        eval "track_id=\${${prefix}_id[track_idx]}"
+    done
+}
+
 function _show_playlist() {
     local row_prefix="$1"
     local row_idx="${2:-0}"
@@ -335,21 +385,7 @@ function _show_playlist() {
     echo -n ")"
     if [ "$brief" = 0 ]; then
         echo ":"
-        local track_prefix="${row_prefix}_tracks"
-        local track_idx=0
-        eval "local track_name=\${${track_prefix}_name[track_idx]}"
-        eval "local track_id=\${${track_prefix}_id[track_idx]}"
-        while [ -n "$track_name" ]; do
-            if [ "$current_track_id" = "$track_id" ]; then
-                echo -n "* "
-            else
-                echo -n "  "
-            fi
-            _show_track $track_prefix $track_idx 1
-            track_idx=$((track_idx + 1))
-            eval "track_name=\${${track_prefix}_name[track_idx]}"
-            eval "track_id=\${${track_prefix}_id[track_idx]}"
-        done
+        _show_tracks "${row_prefix}_tracks" 1
     else
         echo
     fi
@@ -429,6 +465,26 @@ function _cmd_info_playlist() {
         _fetch_playlists "playlist \"$*\"" playlist
         _fetch_tracks "every track of playlist \"$*\"" playlist_tracks
         _show_playlist playlist 0 0
+    fi
+}
+
+function _cmd_search() {
+    if [ -z "$*" ]; then
+        _err "Usage: $progname search [<all | track | albumn | artist >] <search term>"
+    else
+        local target
+        local desc
+        case "$1" in
+            track | tracks | song | songs)
+                              target='songs';   desc='name';        shift ;;
+            album | albums)   target='albums';  desc='album title'; shift ;;
+            artist | artists) target='artists'; desc='artist';      shift ;;
+            all)              target='all';     desc='anything';    shift ;;
+            *)                target='all'      desc='anything' ;;
+        esac
+        _fetch_tracks LOOP "(search playlist \"Library\" for \"$*\" only $target)" search_tracks
+        echo "Searching for tracks with $desc containing \"$*\":"
+        _show_tracks "search_tracks" 1
     fi
 }
 
@@ -622,6 +678,7 @@ case "$cmd" in
     next)        _cmd_next "$@"      ;;
     prev)        _cmd_prev "$@"      ;;
     info)        _cmd_info "$@"      ;;
+    search)      _cmd_search "$@"    ;;
     shuffle)     _cmd_shuffle "$@"   ;;
     repeat)      _cmd_repeat "$@"    ;;
     playlist)    _cmd_playlist "$@"  ;;

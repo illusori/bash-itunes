@@ -14,6 +14,7 @@ Navigation commands:
     next        Skip to next track.
     prev        Skip back to previous track.
     info        View info about current track.
+    search      Search for tracks.
     shuffle     View or set shuffle status.
     repeat      View or set repeat status.
     playlist    View or choose playlist.
