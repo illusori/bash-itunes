@@ -104,6 +104,14 @@ function _tell_itunes() {
     _osascript "tell application \"iTunes\" to $*"
 }
 
+function _ask_itunes() {
+    _osascript "tell application \"iTunes\"
+            $*
+            set AppleScript's text item delimiters to \"\\n\"
+            ret as text
+        end tell"
+}
+
 #  Fetch from iTunes from the data-structures in $1 into the array
 #  variables constructed from prefix $2 and column names $3+ the
 #  given columns in the data-structure.
@@ -140,24 +148,12 @@ function _fetch_from_itunes() {
     #  for large arrays, but on the other hand, for columns that are
     #  actually expressions rather than properties, we appear to have to loop.
     if [ "$use_loop" = 0 ]; then
-        local result=$(_osascript "tell application \"iTunes\" to set ret to ($script_columns) of $source
-set old_delim to AppleScript's text item delimiters
-set AppleScript's text item delimiters to \"\\n\"
-set ret to ret as text
-set AppleScript's text item delimiters to old_delim
-ret")
+        local result=$(_ask_itunes "set ret to ($script_columns) of $source")
     else
-        local result=$(_osascript "tell application \"iTunes\"
-    set ret to {}
-    repeat with v in $source as list
-        copy ($script_columns) of v to the end of ret
-    end repeat
-end tell
-set old_delim to AppleScript's text item delimiters
-set AppleScript's text item delimiters to \"\\n\"
-set ret to ret as text
-set AppleScript's text item delimiters to old_delim
-ret")
+        local result=$(_ask_itunes "set ret to {}
+            repeat with v in $source as list
+                copy ($script_columns) of v to the end of ret
+            end repeat")
     fi
     _log 4 "result '$result'"
 
