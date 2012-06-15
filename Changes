@@ -1,3 +1,7 @@
+* bash-itunes 1.2.1 (2012-06-15-09:32)
+  * Forgot to pass args onto plugins, oops.
+  * Pull command-dispatch into _dispatch function for repeatable invocation.
+
 * bash-itunes 1.2.0 (2012-06-15-08:03)
   * Added plugin support for subcommands.
 

@@ -666,26 +666,75 @@ function _cmd_plugins() {
         for plugin in $plugins; do
             local plugin_cmd=`basename $plugin`
             echo -n "  $plugin_cmd - "
-            . "$plugin"
-            if [ -z "$PLUGIN_NAME" ]; then
-                PLUGIN_NAME="Missing PLUGIN_NAME"
+            if [ -f "$plugin" ]; then
+                . "$plugin"
+                if [ -z "$PLUGIN_NAME" ]; then
+                    PLUGIN_NAME="Missing PLUGIN_NAME"
+                fi
+                if [ -z "$PLUGIN_VERSION" ]; then
+                    PLUGIN_VERSION="Missing PLUGIN_VERSION"
+                fi
+                if [ -z "$PLUGIN_BRIEF" ]; then
+                    PLUGIN_BRIEF="Missing PLUGIN_BRIEF"
+                fi
+                echo "$PLUGIN_NAME ($PLUGIN_VERSION)"
+                echo "    $PLUGIN_BRIEF"
+                unset PLUGIN_NAME
+                unset PLUGIN_VERSION
+                unset PLUGIN_BRIEF
+            else
+                echo "Not a plugin file"
             fi
-            if [ -z "$PLUGIN_VERSION" ]; then
-                PLUGIN_VERSION="Missing PLUGIN_VERSION"
-            fi
-            if [ -z "$PLUGIN_BRIEF" ]; then
-                PLUGIN_BRIEF="Missing PLUGIN_BRIEF"
-            fi
-            echo "$PLUGIN_NAME ($PLUGIN_VERSION)"
-            echo "    $PLUGIN_BRIEF"
-            unset PLUGIN_NAME
-            unset PLUGIN_VERSION
-            unset PLUGIN_BRIEF
         done
     fi
 }
 
 #  Argument processing and dispatch
+
+function _dispatch() {
+    cmd=$1
+    shift
+    case "$cmd" in
+        #  Navigation commands.
+        play|resume|unpause)
+                     _cmd_play "$@"      ;;
+        pause)       _cmd_pause "$@"     ;;
+        stop)        _cmd_stop "$@"      ;;
+        next)        _cmd_next "$@"      ;;
+        prev)        _cmd_prev "$@"      ;;
+        info)        _cmd_info "$@"      ;;
+        search)      _cmd_search "$@"    ;;
+        shuffle)     _cmd_shuffle "$@"   ;;
+        repeat)      _cmd_repeat "$@"    ;;
+        playlist)    _cmd_playlist "$@"  ;;
+        playlists)   _cmd_playlists "$@" ;;
+        #  Volume commands.
+        vol|volume)  _cmd_volume "$@"    ;;
+        mute)        _cmd_mute "$@"      ;;
+        unmute)      _cmd_unmute "$@"    ;;
+        sysvol|sysvolume)
+                     _cmd_sysvolume "$@" ;;
+        sysmute)     _cmd_sysmute "$@"   ;;
+        sysunmute)   _cmd_sysunmute "$@" ;;
+        #  Application commands.
+        open)        _cmd_open "$@"      ;;
+        quit)        _cmd_quit "$@"      ;;
+        show|reveal) _cmd_show "$@"      ;;
+        hide)        _cmd_hide "$@"      ;;
+        #  Extra commands.
+        version)     _cmd_version "$@"   ;;
+        ""|help)     _cmd_help "$@"      ;;
+        plugins)     _cmd_plugins "$@"   ;;
+        *)
+            if [ -f "$plugins_dir/$cmd" ]; then
+                . "$plugins_dir/$cmd"
+                _cmd_$cmd "$@"
+            else
+               _cmd_unknown "$@"
+            fi
+            ;;
+    esac
+}
 
 debug=0
 while getopts "hvd" "OPTNAME";
@@ -699,45 +748,4 @@ do
 done
 shift $(($OPTIND - 1))
 
-cmd=$1
-shift
-case "$cmd" in
-    #  Navigation commands.
-    play|resume|unpause)
-                 _cmd_play "$@"      ;;
-    pause)       _cmd_pause "$@"     ;;
-    stop)        _cmd_stop "$@"      ;;
-    next)        _cmd_next "$@"      ;;
-    prev)        _cmd_prev "$@"      ;;
-    info)        _cmd_info "$@"      ;;
-    search)      _cmd_search "$@"    ;;
-    shuffle)     _cmd_shuffle "$@"   ;;
-    repeat)      _cmd_repeat "$@"    ;;
-    playlist)    _cmd_playlist "$@"  ;;
-    playlists)   _cmd_playlists "$@" ;;
-    #  Volume commands.
-    vol|volume)  _cmd_volume "$@"    ;;
-    mute)        _cmd_mute "$@"      ;;
-    unmute)      _cmd_unmute "$@"    ;;
-    sysvol|sysvolume)
-                 _cmd_sysvolume "$@" ;;
-    sysmute)     _cmd_sysmute "$@"   ;;
-    sysunmute)   _cmd_sysunmute "$@" ;;
-    #  Application commands.
-    open)        _cmd_open "$@"      ;;
-    quit)        _cmd_quit "$@"      ;;
-    show|reveal) _cmd_show "$@"      ;;
-    hide)        _cmd_hide "$@"      ;;
-    #  Extra commands.
-    version)     _cmd_version "$@"   ;;
-    ""|help)     _cmd_help "$@"      ;;
-    plugins)     _cmd_plugins "$@"   ;;
-    *)
-        if [ -f "$plugins_dir/$cmd" ]; then
-            . "$plugins_dir/$cmd"
-            _cmd_$cmd
-        else
-           _cmd_unknown "$@"
-        fi
-        ;;
-esac
+_dispatch "$@"
