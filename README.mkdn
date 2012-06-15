@@ -87,3 +87,7 @@ Installed plugins:
 $ itunes party
 Party party!
 ```
+
+For a more extensive tutorial on writing plugins, check the blog
+entry on my website:
+http://www.illusori.co.uk/blog/2012/06/15/bash_itunes_plugin_tutorial.html
