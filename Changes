@@ -1,3 +1,6 @@
+* bash-itunes 1.2.0 (2012-06-15-08:03)
+  * Added plugin support for subcommands.
+
 * bash-itunes 1.1.0 (2012-06-12-14:07)
   * Added "itunes search" command.
   * Added basic listing of playlists.

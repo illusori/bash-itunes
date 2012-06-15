@@ -13,8 +13,10 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.1.0'
+version='1.2.0'
 progname=`basename $0`
+config_dir="$HOME/.bash-itunes"
+plugins_dir="$config_dir/plugins"
 
 #  Version and help.
 
@@ -60,7 +62,8 @@ Application commands:
 
 Additional commands:
     version     Show version information and exit.
-    help        Show this help and exit."
+    help        Show this help and exit.
+    plugins     Show a list of plugins installed."
 }
 
 function _cmd_unknown() {
@@ -653,6 +656,35 @@ function _cmd_hide() {
     _osascript "tell application \"System Events\" to set visible of process \"iTunes\" to false"
 }
 
+function _cmd_plugins() {
+    echo "Installed plugins:"
+    local glob="$plugins_dir/*"
+    local plugins=($glob)
+    if [ -z "$plugins" -o "$plugins" = "$glob" ]; then
+        echo "  No plugins installed."
+    else
+        for plugin in $plugins; do
+            local plugin_cmd=`basename $plugin`
+            echo -n "  $plugin_cmd - "
+            . "$plugin"
+            if [ -z "$PLUGIN_NAME" ]; then
+                PLUGIN_NAME="Missing PLUGIN_NAME"
+            fi
+            if [ -z "$PLUGIN_VERSION" ]; then
+                PLUGIN_VERSION="Missing PLUGIN_VERSION"
+            fi
+            if [ -z "$PLUGIN_BRIEF" ]; then
+                PLUGIN_BRIEF="Missing PLUGIN_BRIEF"
+            fi
+            echo "$PLUGIN_NAME ($PLUGIN_VERSION)"
+            echo "    $PLUGIN_BRIEF"
+            unset PLUGIN_NAME
+            unset PLUGIN_VERSION
+            unset PLUGIN_BRIEF
+        done
+    fi
+}
+
 #  Argument processing and dispatch
 
 debug=0
@@ -699,5 +731,13 @@ case "$cmd" in
     #  Extra commands.
     version)     _cmd_version "$@"   ;;
     ""|help)     _cmd_help "$@"      ;;
-    *)           _cmd_unknown "$@"   ;;
+    plugins)     _cmd_plugins "$@"   ;;
+    *)
+        if [ -f "$plugins_dir/$cmd" ]; then
+            . "$plugins_dir/$cmd"
+            _cmd_$cmd
+        else
+           _cmd_unknown "$@"
+        fi
+        ;;
 esac
