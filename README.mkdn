@@ -37,6 +37,7 @@ Application commands:
 Additional commands:
     version     Show version information and exit.
     help        Show this help and exit.
+    plugins     Show a list of plugins installed.
 ```
 
 Setup
