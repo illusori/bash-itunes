@@ -737,15 +737,17 @@ function _dispatch() {
 }
 
 debug=0
-while getopts "hvd" "OPTNAME";
-do
-    case $OPTNAME in
-        h) _cmd_help;    exit 0  ;;
-        v) _cmd_version; exit 0  ;;
-        d) debug=$(($debug + 1)) ;;
-        *) exit -1               ;;
-    esac
-done
-shift $(($OPTIND - 1))
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    # Being run directly, do our command processing.
+    while getopts "hvd" "OPTNAME"; do
+        case $OPTNAME in
+            h) _cmd_help;    exit 0  ;;
+            v) _cmd_version; exit 0  ;;
+            d) debug=$(($debug + 1)) ;;
+            *) exit -1               ;;
+        esac
+    done
+    shift $(($OPTIND - 1))
 
-_dispatch "$@"
+    _dispatch "$@"
+fi
