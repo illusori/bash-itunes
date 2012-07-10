@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    # Being run directly, probably by test harness running entire dir.
+    echo "1..0 # SKIP bash-itunes-test-functions isn't a test file"
+    exit 0
+fi
+
+mocked_command_delimiter="===================="
+mocked_commands="/tmp/bash_tap_mock_osascript.$$"
+
+function record_sent_command() {
+    if [ ! -f "$mocked_commands" ]; then
+        _bt_add_on_exit_cmd "rm -f '$mocked_commands'"
+    fi
+    echo "$*" >>$mocked_commands
+    echo $mocked_command_delimiter >>$mocked_commands
+}
+
+function read_sent_commands() {
+    i=0
+    unset sent_commands
+    while IFS='' read line; do
+        if [ "$line" = "$mocked_command_delimiter" ]; then
+            i=$((i + 1))
+        else
+            sent_commands[$i]="${sent_commands[$i]}$line\n"
+        fi
+    done < $mocked_commands
+}
+
+function clear_sent_commands() {
+    rm -f '$mocked_commands'
+}
+
+
+
+
+
