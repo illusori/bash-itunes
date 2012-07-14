@@ -98,7 +98,7 @@ $mock_track_4_time
 $mock_track_4_id"
 
 
-tests_per_track_displayed=3
+tests_per_track_displayed=4
 
 function test_track_displayed() {
     local output="$1"
@@ -126,7 +126,8 @@ function test_track_displayed() {
     eval "local track_id=\$${track_variable_prefix}_id"
     printf -v track_id "%q" "$track_id"
 
-    like "$output" "\"$track_name\"" "$test_name should contain '\"$track_name\"'"
-    like "$output" "by $track_artist" "$test_name should contain 'by $track_artist'"
-    like "$output" "from \"$track_album\"" "$test_name should contain 'from \"$track_album\"'"
+    like "$output" "\"$track_name\"" "$test_name should contain track name '\"$track_name\"'"
+    like "$output" "by $track_artist" "$test_name should contain track artist 'by $track_artist'"
+    like "$output" "from \"$track_album\"" "$test_name should contain track album 'from \"$track_album\"'"
+    like "$output" "\(([0-9]+:[0-9][0-9] of )?$track_time\)" "$test_name should contain track time '($track_time)' or '(m:ss of $track_time)'"
 }
