@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# test: itunes help
+
 . $(dirname $0)/bash-tap-bootstrap
 . $(dirname $0)/../itunes
 

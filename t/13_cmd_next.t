@@ -1,21 +1,18 @@
 #!/bin/bash
 
+# test: itunes next
+
 . $(dirname $0)/bash-tap-bootstrap
 . "$BASH_TAP_ROOT/bash-tap-mock"
 . $(dirname $0)/bash-itunes-test-functions
 . $(dirname $0)/../itunes
 
-plan tests 9
+plan tests $((8 + (1 * tests_per_track_displayed)))
 
 function mock_osascript() {
     record_sent_command "$*"
     if [[ "$*" =~ 'of current track' ]]; then
-        echo "Apoptygma Berzerk
-Kathy's Song
-Welcome To Earth \"Extra bit for testing\"
-
-100
-6:35"
+        echo "$mock_track_1_data"
     elif [[ "$*" =~ 'player position' ]]; then
         echo "60"
     fi
@@ -39,5 +36,5 @@ like "${sent_commands[2]}" 'player position as integer' "third sent command shou
 like "${sent_commands[2]}" 'tell application "iTunes"' "third sent command should contain 'tell application \"iTunes\"'"
 
 like "$stdout" "Skipping to next track" "stdout should tell user that track is being skipped"
-like "$stdout" "Kathy's Song" "stdout should contain summary of new track"
+test_track_displayed "$stdout" "mock_track_1" "stdout"
 is "$stderr" "" "stderr should be empty"

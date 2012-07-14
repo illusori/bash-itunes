@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# test: itunes pause
+
 . $(dirname $0)/bash-tap-bootstrap
 . "$BASH_TAP_ROOT/bash-tap-mock"
 . $(dirname $0)/bash-itunes-test-functions
