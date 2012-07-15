@@ -285,6 +285,7 @@ function _fetch_current_track() {
 }
 function _scrub_current_track() {
     _scrub_tracks "current_track"
+    unset "current_track_pos"
 }
 
 function _fetch_current_playlist() {
