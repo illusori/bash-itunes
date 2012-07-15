@@ -10,9 +10,6 @@ mocked_command_delimiter="===================="
 mocked_commands="/tmp/bash_tap_mock_osascript.$$"
 
 function record_sent_command() {
-    if [ ! -f "$mocked_commands" ]; then
-        _bt_add_on_exit_cmd "rm -f '$mocked_commands'"
-    fi
     echo "$*" >>$mocked_commands
     echo $mocked_command_delimiter >>$mocked_commands
 }
@@ -20,17 +17,24 @@ function record_sent_command() {
 function read_sent_commands() {
     i=0
     unset sent_commands
-    while IFS='' read line; do
-        if [ "$line" = "$mocked_command_delimiter" ]; then
-            i=$((i + 1))
-        else
-            sent_commands[$i]="${sent_commands[$i]}$line\n"
-        fi
-    done < $mocked_commands
+    if [ -f "$mocked_commands" ]; then
+        while IFS='' read line; do
+	    if [ "$line" = "$mocked_command_delimiter" ]; then
+		i=$((i + 1))
+	    else
+		sent_commands[$i]="${sent_commands[$i]}$line\n"
+	    fi
+	done < $mocked_commands
+    fi
 }
 
 function clear_sent_commands() {
-    rm -f '$mocked_commands'
+    if [ -f "$mocked_commands" ]; then
+        rm -f "$mocked_commands"
+    else
+        _bt_add_on_exit_cmd "rm -f '$mocked_commands'"
+    fi
+    touch "$mocked_commands"
 }
 
 # special cases: full dataset, single quotes and double quotes to mess things up
