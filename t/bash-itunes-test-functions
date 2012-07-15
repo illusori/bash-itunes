@@ -98,12 +98,13 @@ $mock_track_4_time
 $mock_track_4_id"
 
 
-tests_per_track_displayed=4
+tests_per_track_displayed=5
 
 function test_track_displayed() {
     local output="$1"
     local track_variable_prefix="$2"
     local test_name="$3"
+    local verbose="$4"
 
     # I kid you not.
     #   eval is to get the symbolic reference to the real variables.
@@ -130,4 +131,10 @@ function test_track_displayed() {
     like "$output" "by $track_artist" "$test_name should contain track artist 'by $track_artist'"
     like "$output" "from \"$track_album\"" "$test_name should contain track album 'from \"$track_album\"'"
     like "$output" "\(([0-9]+:[0-9][0-9] of )?$track_time\)" "$test_name should contain track time '($track_time)' or '(m:ss of $track_time)'"
+
+    if [[ -n "$verbose" && -n "$track_rating" && "$track_rating" > "0" ]]; then
+        like "$output" "You've rated this track $track_rating\\." "$test_name should contain track rating 'You've rated this track $track_rating.'"
+    else
+        unlike "$output" "You've rated this track " "$test_name should not contain track rating 'You've rated this track ...'"
+    fi
 }
