@@ -37,6 +37,16 @@ function clear_sent_commands() {
     touch "$mocked_commands"
 }
 
+function regexp_quotemeta() {
+    local str="$*"
+
+    printf -v str "%q" "$str"
+    str="${str//+/\\+}"
+    str="${str//./\\.}"
+
+    echo -n $str
+}
+
 # special cases: full dataset, single quotes and double quotes to mess things up
 mock_track_1_name="Kathy's Song (Come Lie Next To Me)"
 mock_track_1_artist="Apoptygma Berzerk"
@@ -112,24 +122,23 @@ function test_track_displayed() {
 
     # I kid you not.
     #   eval is to get the symbolic reference to the real variables.
-    #   printf is to escape special characters for the "like" regexp matching.
-    #     %q isn't quite the right escaping, but it seems to suffice in the
-    #     absence of \Q...\E support in bash
+    #   regexp_quotemeta is to escape special characters for the "like"
+    #   regexp matching in the absence of \Q...\E support in bash
 
     eval "local track_name=\$${track_variable_prefix}_name"
-    printf -v track_name "%q" "$track_name"
+    track_name=$(regexp_quotemeta "$track_name")
     eval "local track_artist=\$${track_variable_prefix}_artist"
-    printf -v track_artist "%q" "$track_artist"
+    track_artist=$(regexp_quotemeta "$track_artist")
     eval "local track_album=\$${track_variable_prefix}_album"
-    printf -v track_album "%q" "$track_album"
+    track_album=$(regexp_quotemeta "$track_album")
     eval "local track_year=\$${track_variable_prefix}_year"
-    printf -v track_year "%q" "$track_year"
+    track_year=$(regexp_quotemeta "$track_year")
     eval "local track_rating=\$${track_variable_prefix}_rating"
-    printf -v track_rating "%q" "$track_rating"
+    track_rating=$(regexp_quotemeta "$track_rating")
     eval "local track_time=\$${track_variable_prefix}_time"
-    printf -v track_time "%q" "$track_time"
+    track_time=$(regexp_quotemeta "$track_time")
     eval "local track_id=\$${track_variable_prefix}_id"
-    printf -v track_id "%q" "$track_id"
+    track_id=$(regexp_quotemeta "$track_id")
 
     like "$output" "\"$track_name\"" "$test_name should contain track name '\"$track_name\"'"
     like "$output" "by $track_artist" "$test_name should contain track artist 'by $track_artist'"
@@ -141,4 +150,93 @@ function test_track_displayed() {
     else
         unlike "$output" "You've rated this track " "$test_name should not contain track rating 'You've rated this track ...'"
     fi
+}
+
+# special cases: full dataset, special characters
+mock_playlist_1_name="c Synth+Ind \"Some quotes for good measure\", it's trying to break things"
+mock_playlist_1_time="7:18:19:41"
+mock_playlist_1_id="28243"
+# Just to be awkward, this data is interleaved
+mock_playlist_1_tracks="$mock_track_1_name
+$mock_track_2_name
+$mock_track_3_name
+$mock_track_4_name
+$mock_track_1_artist
+$mock_track_2_artist
+$mock_track_3_artist
+$mock_track_4_artist
+$mock_track_1_album
+$mock_track_2_album
+$mock_track_3_album
+$mock_track_4_album
+$mock_track_1_year
+$mock_track_2_year
+$mock_track_3_year
+$mock_track_4_year
+$mock_track_1_rating
+$mock_track_2_rating
+$mock_track_3_rating
+$mock_track_4_rating
+$mock_track_1_time
+$mock_track_2_time
+$mock_track_3_time
+$mock_track_4_time
+$mock_track_1_id
+$mock_track_2_id
+$mock_track_3_id
+$mock_track_4_id"
+mock_playlist_1_count="4"
+mock_playlist_1_data="$mock_playlist_1_name
+$mock_playlist_1_time
+$mock_playlist_1_id"
+
+# special cases: full dataset, special characters
+mock_playlist_2_name="c Synth+Ind (Great)"
+mock_playlist_2_time="2:15:41:34"
+mock_playlist_2_id="30716"
+# Just to be awkward, this data is interleaved
+mock_playlist_2_tracks="$mock_track_1_name
+$mock_track_3_name
+$mock_track_1_artist
+$mock_track_3_artist
+$mock_track_1_album
+$mock_track_3_album
+$mock_track_1_year
+$mock_track_3_year
+$mock_track_1_rating
+$mock_track_3_rating
+$mock_track_1_time
+$mock_track_3_time
+$mock_track_1_id
+$mock_track_3_id"
+mock_playlist_2_count="2"
+mock_playlist_2_data="$mock_playlist_2_name
+$mock_playlist_2_time
+$mock_playlist_2_id"
+
+tests_per_playlist_displayed=3
+
+function test_playlist_displayed() {
+    local output="$1"
+    local playlist_variable_prefix="$2"
+    local test_name="$3"
+    local verbose="$4"
+
+    # I kid you not.
+    #   eval is to get the symbolic reference to the real variables.
+    #   regexp_quotemeta is to escape special characters for the "like"
+    #   regexp matching in the absence of \Q...\E support in bash
+
+    eval "local playlist_name=\$${playlist_variable_prefix}_name"
+    playlist_name=$(regexp_quotemeta "$playlist_name")
+    eval "local playlist_time=\$${playlist_variable_prefix}_time"
+    playlist_time=$(regexp_quotemeta "$playlist_time")
+    eval "local playlist_id=\$${playlist_variable_prefix}_id"
+    playlist_id=$(regexp_quotemeta "$playlist_id")
+    eval "local playlist_count=\$${playlist_variable_prefix}_count"
+    playlist_count=$(regexp_quotemeta "$playlist_count")
+
+    like "$output" "\\\"$playlist_name\\\"" "$test_name should contain playlist name '\"$playlist_name\"'"
+    like "$output" "\($playlist_time\)" "$test_name should contain playlist time '($playlist_time)'"
+    like "$output" "\($playlist_count tracks?\)" "$test_name should contain playlist track count '($playlist_count)'"
 }
