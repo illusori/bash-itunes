@@ -11,8 +11,8 @@
 . $(dirname $0)/bash-itunes-test-functions
 . $(dirname $0)/../itunes
 
-tests_per_info_current_track=$((5 + (1 * tests_per_track_displayed)))
-tests_per_info_named_track=$((tests_per_info_current_track - 2))
+tests_per_info_current_track=$((1 + (1 * tests_per_current_track_fetched) + (1 * tests_per_track_displayed)))
+tests_per_info_named_track=$((1 + (1 * tests_per_track_fetched) + (1 * tests_per_track_displayed)))
 
 tests_per_info_current_playlist=$((5 + (1 * tests_per_playlist_displayed) + (4 * tests_per_track_displayed)))
 tests_per_info_named_playlist=$((0 + (1 * tests_per_playlist_displayed) + (2 * tests_per_track_displayed)))
@@ -53,13 +53,9 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-like "${sent_commands[0]}" 'of current track' "first sent command of 'itunes info' should be fetch of 'current track'"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command of 'itunes info' should contain 'tell application \"iTunes\"'"
-like "${sent_commands[1]}" 'player position as integer' "second sent command of 'itunes info' should contain 'player position as integer'"
-like "${sent_commands[1]}" 'tell application "iTunes"' "second sent command of 'itunes info' should contain 'tell application \"iTunes\"'"
-
-test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info'" "verbose"
 is "$stderr" "" "stderr of 'itunes info' should be empty"
+test_send_commands_current_track_fetch "0" "first" "'itunes info'"
+test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info'" "verbose"
 
 # Current track is cached, clear it after.
 _scrub_current_track
@@ -75,13 +71,9 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-like "${sent_commands[0]}" 'of current track' "first sent command of 'itunes info track' should be fetch of 'current track'"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command of 'itunes info track' should contain 'tell application \"iTunes\"'"
-like "${sent_commands[1]}" 'player position as integer' "second sent command of 'itunes info track' should contain 'player position as integer'"
-like "${sent_commands[1]}" 'tell application "iTunes"' "second sent command of 'itunes info track' should contain 'tell application \"iTunes\"'"
-
-test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info track'" "verbose"
 is "$stderr" "" "stderr of 'itunes info track' should be empty"
+test_send_commands_current_track_fetch "0" "first" "'itunes info track'"
+test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info track'" "verbose"
 
 # Current track is cached, clear it after.
 _scrub_current_track
@@ -97,11 +89,9 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-like "${sent_commands[0]}" 'of track "Sapphire"' "first sent command of 'itunes info track Sapphire' should be fetch of track named 'Sapphire'"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command of 'itunes info track Sapphire' should contain 'tell application \"iTunes\"'"
-
-test_track_displayed "$stdout" "mock_track_3" "stdout of 'itunes info track Sapphire'" "verbose"
 is "$stderr" "" "stderr of 'itunes info track Sapphire' should be empty"
+test_send_commands_track_fetch "0" "first" 'of track "Sapphire"' "'itunes info track Sapphire'"
+test_track_displayed "$stdout" "mock_track_3" "stdout of 'itunes info track Sapphire'" "verbose"
 
 # test: itunes info playlist
 clear_sent_commands
@@ -114,18 +104,18 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
+is "$stderr" "" "stderr of 'itunes info' should be empty"
+
 like "${sent_commands[0]}" 'of current track' "first sent command of 'itunes info playlist' should be fetch of 'current track'"
 like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command of 'itunes info playlist' should contain 'tell application \"iTunes\"'"
 like "${sent_commands[1]}" 'player position as integer' "second sent command of 'itunes info playlist' should contain 'player position as integer'"
 like "${sent_commands[1]}" 'tell application "iTunes"' "second sent command of 'itunes info playlist' should contain 'tell application \"iTunes\"'"
 
 test_playlist_displayed "$stdout" "mock_playlist_1" "stdout of 'itunes info playlist'"
-
 test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info playlist'"
 test_track_displayed "$stdout" "mock_track_2" "stdout of 'itunes info playlist'"
 test_track_displayed "$stdout" "mock_track_3" "stdout of 'itunes info playlist'"
 test_track_displayed "$stdout" "mock_track_4" "stdout of 'itunes info playlist'"
-is "$stderr" "" "stderr of 'itunes info' should be empty"
 
 # Current track is cached, clear it after.
 _scrub_current_track

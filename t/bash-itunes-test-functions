@@ -47,6 +47,32 @@ function regexp_quotemeta() {
     echo -n $str
 }
 
+tests_per_current_track_fetched=4
+
+function test_send_commands_current_track_fetch() {
+    local first_idx="$1"
+    local ordinal="$2"
+    local test_name="$3"
+    local second_idx=$((first_idx + 1));
+
+    like "${sent_commands[$first_idx]}" 'of current track' "$ordinal sent command of $test_name should be fetch of 'current track'"
+    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$second_idx]}" 'player position as integer' "next sent command of $test_name should contain 'player position as integer'"
+    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+}
+
+tests_per_track_fetched=2
+
+function test_send_commands_track_fetch() {
+    local first_idx="$1"
+    local ordinal="$2"
+    local track_specifier="$3"
+    local test_name="$4"
+
+    like "${sent_commands[$first_idx]}" "$track_specifier" "$ordinal sent command of $test_name should be fetch $track_specifier"
+    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+}
+
 # special cases: full dataset, single quotes and double quotes to mess things up
 mock_track_1_name="Kathy's Song (Come Lie Next To Me)"
 mock_track_1_artist="Apoptygma Berzerk"
