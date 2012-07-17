@@ -48,6 +48,7 @@ function regexp_quotemeta() {
 }
 
 tests_per_current_track_fetched=4
+commands_per_current_track_fetched=2
 
 function test_send_commands_current_track_fetch() {
     local first_idx="$1"
@@ -62,6 +63,7 @@ function test_send_commands_current_track_fetch() {
 }
 
 tests_per_track_fetched=2
+commands_per_track_fetched=1
 
 function test_send_commands_track_fetch() {
     local first_idx="$1"
@@ -69,7 +71,9 @@ function test_send_commands_track_fetch() {
     local track_specifier="$3"
     local test_name="$4"
 
-    like "${sent_commands[$first_idx]}" "$track_specifier" "$ordinal sent command of $test_name should be fetch $track_specifier"
+    track_specifier=$(regexp_quotemeta "$track_specifier")
+
+    like "${sent_commands[$first_idx]}" "of $track_specifier" "$ordinal sent command of $test_name should be fetch of $track_specifier"
     like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
 }
 
@@ -176,6 +180,44 @@ function test_track_displayed() {
     else
         unlike "$output" "You've rated this track " "$test_name should not contain track rating 'You've rated this track ...'"
     fi
+}
+
+tests_per_playlist_fetched=7
+commands_per_playlist_fetched=3
+
+function test_send_commands_playlist_fetch() {
+    local first_idx="$1"
+    local ordinal="$2"
+    local playlist_specifier="$3"
+    local test_name="$4"
+    local second_idx=$((first_idx + 1));
+    local third_idx=$((first_idx + 2));
+
+    playlist_specifier=$(regexp_quotemeta "$playlist_specifier")
+
+    # First command is fetch of playlist details
+    like "${sent_commands[$first_idx]}" "of $playlist_specifier" "$ordinal sent command of $test_name should be fetch of $playlist_specifier"
+    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+
+    # Second command is fetch of number of tracks
+    like "${sent_commands[$second_idx]}" "in $playlist_specifier" "next sent command of $test_name should loop over the matching playlists"
+    like "${sent_commands[$second_idx]}" "\(count tracks\)" "next sent command of $test_name should count tracks for each matching playlist"
+    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+
+    # Third command is fetch of track details
+    like "${sent_commands[$third_idx]}" "of every track of $playlist_specifier" "next sent command of $test_name should be fetch of tracks in the playlist"
+    like "${sent_commands[$third_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+}
+
+tests_per_current_playlist_fetched="$tests_per_playlist_fetched"
+commands_per_current_playlist_fetched="$commands_per_playlist_fetched"
+
+function test_send_commands_current_playlist_fetch() {
+    local first_idx="$1"
+    local ordinal="$2"
+    local test_name="$3"
+
+    test_send_commands_playlist_fetch "$first_idx" "$ordinal" "current playlist" "$test_name"
 }
 
 # special cases: full dataset, special characters

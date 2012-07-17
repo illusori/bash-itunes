@@ -4,20 +4,25 @@
 # test: itunes info track
 # test: itunes info track <track name>
 # test: itunes info playlist
-# TODO: test: itunes info playlist <playlist name>
+# test: itunes info playlist <playlist name>
 
 . $(dirname $0)/bash-tap-bootstrap
 . "$BASH_TAP_ROOT/bash-tap-mock"
 . $(dirname $0)/bash-itunes-test-functions
 . $(dirname $0)/../itunes
 
-tests_per_info_current_track=$((1 + (1 * tests_per_current_track_fetched) + (1 * tests_per_track_displayed)))
-tests_per_info_named_track=$((1 + (1 * tests_per_track_fetched) + (1 * tests_per_track_displayed)))
+tests_per_info_current_track=$((2 + (1 * tests_per_current_track_fetched) + (1 * tests_per_track_displayed)))
+tests_per_info_named_track=$((2 + (1 * tests_per_track_fetched) + (1 * tests_per_track_displayed)))
 
-tests_per_info_current_playlist=$((5 + (1 * tests_per_playlist_displayed) + (4 * tests_per_track_displayed)))
-tests_per_info_named_playlist=$((0 + (1 * tests_per_playlist_displayed) + (2 * tests_per_track_displayed)))
+tests_per_info_current_playlist=$((2 + (1 * tests_per_current_track_fetched) + (1 * tests_per_current_playlist_fetched) + (1 * tests_per_playlist_displayed) + (4 * tests_per_track_displayed)))
+tests_per_info_named_playlist=$((2 + (1 * tests_per_playlist_fetched) + (1 * tests_per_playlist_displayed) + (2 * tests_per_track_displayed)))
 
-plan tests $(((2 * tests_per_info_current_track) + (1 * tests_per_info_named_track) + (1 * tests_per_info_current_playlist) + (0 * tests_per_info_named_playlist)))
+commands_per_current_track=$(((1 * commands_per_current_track_fetched)))
+commands_per_named_track=$(((1 * commands_per_track_fetched)))
+commands_per_current_playlist=$(((1 * commands_per_current_playlist_fetched) + (1 * commands_per_current_track_fetched)))
+commands_per_named_playlist=$(((1 * commands_per_playlist_fetched)))
+
+plan tests $(((2 * tests_per_info_current_track) + (1 * tests_per_info_named_track) + (1 * tests_per_info_current_playlist) + (1 * tests_per_info_named_playlist)))
 
 function mock_osascript() {
     record_sent_command "$*"
@@ -43,6 +48,7 @@ function mock_osascript() {
 }
 
 # test: itunes info
+test_name="'itunes info'"
 clear_sent_commands
 mock_function "_osascript" "mock_osascript"
 start_output_capture
@@ -53,14 +59,16 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-is "$stderr" "" "stderr of 'itunes info' should be empty"
-test_send_commands_current_track_fetch "0" "first" "'itunes info'"
-test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info'" "verbose"
+is "$stderr" "" "stderr of $test_name should be empty"
+test_send_commands_current_track_fetch "0" "first" "$test_name"
+test_track_displayed "$stdout" "mock_track_1" "stdout of $test_name" "verbose"
+is "${#sent_commands[*]}" "$commands_per_current_track" "number of commands sent for $test_name should be correct"
 
 # Current track is cached, clear it after.
 _scrub_current_track
 
 # test: itunes info track
+test_name="'itunes info track'"
 clear_sent_commands
 mock_function "_osascript" "mock_osascript"
 start_output_capture
@@ -71,29 +79,33 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-is "$stderr" "" "stderr of 'itunes info track' should be empty"
-test_send_commands_current_track_fetch "0" "first" "'itunes info track'"
-test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info track'" "verbose"
+is "$stderr" "" "stderr of $test_name should be empty"
+test_send_commands_current_track_fetch "0" "first" "$test_name"
+test_track_displayed "$stdout" "mock_track_1" "stdout of $test_name" "verbose"
+is "${#sent_commands[*]}" "$commands_per_current_track" "number of commands sent for $test_name should be correct"
 
 # Current track is cached, clear it after.
 _scrub_current_track
 
 # test: itunes info track <track name>
+test_name="'itunes info track $mock_track_3_name'"
 clear_sent_commands
 mock_function "_osascript" "mock_osascript"
 start_output_capture
 
-_dispatch "info" "track" "Sapphire"
+_dispatch "info" "track" "$mock_track_3_name"
 
 finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-is "$stderr" "" "stderr of 'itunes info track Sapphire' should be empty"
-test_send_commands_track_fetch "0" "first" 'of track "Sapphire"' "'itunes info track Sapphire'"
-test_track_displayed "$stdout" "mock_track_3" "stdout of 'itunes info track Sapphire'" "verbose"
+is "$stderr" "" "stderr of $test_name should be empty"
+test_send_commands_track_fetch "0" "first" 'track "Sapphire"' "$test_name"
+test_track_displayed "$stdout" "mock_track_3" "stdout of $test_name" "verbose"
+is "${#sent_commands[*]}" "$commands_per_named_track" "number of commands sent for $test_name should be correct"
 
 # test: itunes info playlist
+test_name="'itunes info playlist'"
 clear_sent_commands
 mock_function "_osascript" "mock_osascript"
 start_output_capture
@@ -104,22 +116,34 @@ finish_output_capture stdout stderr
 restore_mocked_function "_osascript"
 read_sent_commands
 
-is "$stderr" "" "stderr of 'itunes info' should be empty"
-
-like "${sent_commands[0]}" 'of current track' "first sent command of 'itunes info playlist' should be fetch of 'current track'"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command of 'itunes info playlist' should contain 'tell application \"iTunes\"'"
-like "${sent_commands[1]}" 'player position as integer' "second sent command of 'itunes info playlist' should contain 'player position as integer'"
-like "${sent_commands[1]}" 'tell application "iTunes"' "second sent command of 'itunes info playlist' should contain 'tell application \"iTunes\"'"
-
-test_playlist_displayed "$stdout" "mock_playlist_1" "stdout of 'itunes info playlist'"
-test_track_displayed "$stdout" "mock_track_1" "stdout of 'itunes info playlist'"
-test_track_displayed "$stdout" "mock_track_2" "stdout of 'itunes info playlist'"
-test_track_displayed "$stdout" "mock_track_3" "stdout of 'itunes info playlist'"
-test_track_displayed "$stdout" "mock_track_4" "stdout of 'itunes info playlist'"
+is "$stderr" "" "stderr of $test_name should be empty"
+test_send_commands_current_track_fetch "0" "first" "$test_name"
+test_send_commands_current_playlist_fetch "2" "third" "$test_name"
+test_playlist_displayed "$stdout" "mock_playlist_1" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_1" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_2" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_3" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_4" "stdout of $test_name"
+is "${#sent_commands[*]}" "$commands_per_current_playlist" "number of commands sent for $test_name should be correct"
 
 # Current track is cached, clear it after.
 _scrub_current_track
 
+# test: itunes info playlist <playlist name>
+test_name="'itunes info $mock_playlist_2_name'"
+clear_sent_commands
+mock_function "_osascript" "mock_osascript"
+start_output_capture
 
+_dispatch "info" "playlist" "$mock_playlist_2_name"
 
-# TODO: test: itunes info playlist <playlist name>
+finish_output_capture stdout stderr
+restore_mocked_function "_osascript"
+read_sent_commands
+
+is "$stderr" "" "stderr of $test_name should be empty"
+test_send_commands_playlist_fetch "0" "first" "playlist \"$mock_playlist_2_name\"" "$test_name"
+test_playlist_displayed "$stdout" "mock_playlist_2" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_1" "stdout of $test_name"
+test_track_displayed "$stdout" "mock_track_3" "stdout of $test_name"
+is "${#sent_commands[*]}" "$commands_per_named_playlist" "number of commands sent for $test_name should be correct"
