@@ -18,16 +18,10 @@ function mock_osascript() {
     fi
 }
 
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
+# test: itunes play
+dispatch_mocked_command "play"
 
-_dispatch "play"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
-
+is "$stderr" "" "stderr should be empty"
 like "${sent_commands[0]}" 'play' "first sent command should contain 'play'"
 like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command should contain 'tell application \"iTunes\"'"
 like "${sent_commands[1]}" 'of current track' "second sent command should be fetch of 'current track'"
@@ -37,4 +31,3 @@ like "${sent_commands[2]}" 'tell application "iTunes"' "third sent command shoul
 
 like "$stdout" "Resuming" "stdout should tell user that play is resuming"
 test_track_displayed "$stdout" "mock_track_1" "stdout"
-is "$stderr" "" "stderr should be empty"

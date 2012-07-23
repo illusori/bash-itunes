@@ -14,22 +14,16 @@ plan tests $((5 + (2 * tests_per_track_displayed)))
 
 function mock_osascript() {
     record_sent_command "$*"
-    if [[ "$*" =~ 'search playlist' ]]; then
+    if [[ "$*" =~ 'search playlist "Library" for "kathy"' ]]; then
         echo "$mock_track_1_data
 $mock_track_4_data"
     fi
 }
 
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
+# test: itunes search <search>
+dispatch_mocked_command "search" "kathy"
 
-_dispatch "search" "kathy"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
-
+is "$stderr" "" "stderr should be empty"
 like "${sent_commands[0]}" 'search playlist "Library" for "kathy"' "first sent command should contain search for 'kathy'"
 like "${sent_commands[0]}" 'only all' "first sent command should restrict search to 'all'"
 like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command should contain 'tell application \"iTunes\"'"
@@ -37,4 +31,3 @@ like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command shoul
 like "$stdout" "Searching for tracks with anything containing \"kathy\"" "stdout should tell user what is being search for"
 test_track_displayed "$stdout" "mock_track_1" "stdout"
 test_track_displayed "$stdout" "mock_track_4" "stdout"
-is "$stderr" "" "stderr should be empty"

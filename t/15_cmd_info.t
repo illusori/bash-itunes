@@ -49,15 +49,7 @@ function mock_osascript() {
 
 # test: itunes info
 test_name="'itunes info'"
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
-
-_dispatch "info"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
+dispatch_mocked_command "info"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_current_track_fetch "0" "first" "$test_name"
@@ -69,15 +61,7 @@ _scrub_current_track
 
 # test: itunes info track
 test_name="'itunes info track'"
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
-
-_dispatch "info" "track"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
+dispatch_mocked_command "info" "track"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_current_track_fetch "0" "first" "$test_name"
@@ -89,15 +73,7 @@ _scrub_current_track
 
 # test: itunes info track <track name>
 test_name="'itunes info track $mock_track_3_name'"
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
-
-_dispatch "info" "track" "$mock_track_3_name"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
+dispatch_mocked_command "info" "track" "$mock_track_3_name"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_track_fetch "0" "first" 'track "Sapphire"' "$test_name"
@@ -106,15 +82,7 @@ is "${#sent_commands[*]}" "$commands_per_named_track" "number of commands sent f
 
 # test: itunes info playlist
 test_name="'itunes info playlist'"
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
-
-_dispatch "info" "playlist"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
+dispatch_mocked_command "info" "playlist"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_current_track_fetch "0" "first" "$test_name"
@@ -130,16 +98,8 @@ is "${#sent_commands[*]}" "$commands_per_current_playlist" "number of commands s
 _scrub_current_track
 
 # test: itunes info playlist <playlist name>
-test_name="'itunes info $mock_playlist_2_name'"
-clear_sent_commands
-mock_function "_osascript" "mock_osascript"
-start_output_capture
-
-_dispatch "info" "playlist" "$mock_playlist_2_name"
-
-finish_output_capture stdout stderr
-restore_mocked_function "_osascript"
-read_sent_commands
+test_name="'itunes info playlist $mock_playlist_2_name'"
+dispatch_mocked_command "info" "playlist" "$mock_playlist_2_name"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_playlist_fetch "0" "first" "playlist \"$mock_playlist_2_name\"" "$test_name"

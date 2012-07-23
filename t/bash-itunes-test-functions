@@ -37,6 +37,35 @@ function clear_sent_commands() {
     touch "$mocked_commands"
 }
 
+# A default mock function, redefine for custom return values.
+function mock_osascript() {
+    record_sent_command "$*"
+}
+
+function dispatch_mocked_command() {
+    clear_sent_commands
+    mock_function "_osascript" "mock_osascript"
+    start_output_capture
+
+    _dispatch "$@"
+
+    finish_output_capture stdout stderr
+    restore_mocked_function "_osascript"
+    read_sent_commands
+}
+
+function test_no_commands_sent() {
+    local test_name="$1"
+
+    if [ -n "$test_name" ]; then
+        test_name="number of commands sent in $test_name should be zero"
+    else
+        test_name="number of commands sent should be zero"
+    fi
+
+    is "${#sent_commands[*]}" "0" "$test_name"
+}
+
 function regexp_quotemeta() {
     local str="$*"
 
