@@ -337,3 +337,23 @@ function test_playlist_displayed() {
     like "$output" "\($playlist_time\)" "$test_name should contain playlist time '($playlist_time)'"
     like "$output" "\($playlist_count tracks?\)" "$test_name should contain playlist track count '($playlist_count)'"
 }
+
+tests_per_search_fetched=3
+commands_per_search=1
+
+function test_send_commands_search_fetch() {
+    local first_idx="$1"
+    local ordinal="$2"
+    local search_term="$3"
+    local search_restriction="$4"
+    local test_name="$5"
+
+    search_term=$(regexp_quotemeta "$search_term")
+    search_restriction=$(regexp_quotemeta "$search_restriction")
+
+    # First command is the search
+    like "${sent_commands[$first_idx]}" "search playlist \"Library\" for \"$search_term\"" "first sent command of $test_name should contain search for '$search_term'"
+    like "${sent_commands[$first_idx]}" "$search_restriction" "$ordinal sent command of $test_name should restrict search to '$search_restriction'"
+    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+}
+
