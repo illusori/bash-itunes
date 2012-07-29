@@ -2,6 +2,7 @@
   * Only perform option parsing and subcommand dispatch if run directly;
     as opposed to being sourced by another script.
   * Add test suite.
+  * Correctly escape search term in "itunes search" for use in AppleScript.
 
 * bash-itunes 1.2.1 (2012-06-15-09:32)
   * Forgot to pass args onto plugins, oops.

@@ -95,6 +95,17 @@ function _pluralize() {
     fi
 }
 
+function _quote_for_applescript_string() {
+    local value="$*"
+
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+
+    _log 4 "Escaping '$*' to '$value' for use in applescript string"
+
+    echo "$value"
+}
+
 function _osascript() {
     _log 2 "Run: osascript -e \"$*\""
     if [ "$debug" -gt 0 ]; then
@@ -486,8 +497,10 @@ function _cmd_search() {
             all)              target='all';     desc='anything';    shift ;;
             *)                target='all'      desc='anything' ;;
         esac
-        _fetch_tracks LOOP "(search playlist \"Library\" for \"$*\" only $target)" search_tracks
-        echo "Searching for tracks with $desc containing \"$*\":"
+        local search_term="$*"
+        local escaped_search_term=$(_quote_for_applescript_string "$search_term")
+        _fetch_tracks LOOP "(search playlist \"Library\" for \"$escaped_search_term\" only $target)" search_tracks
+        echo "Searching for tracks with $desc containing \"$search_term\":"
         _show_tracks "search_tracks" 1
     fi
 }
