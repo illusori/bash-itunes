@@ -4,6 +4,7 @@
 # test: itunes shuffle (while off)
 # test: itunes shuffle on
 # test: itunes shuffle off
+# test: itunes shuffle neitheronnoroff
 
 . $(dirname $0)/bash-tap-bootstrap
 . "$BASH_TAP_ROOT/bash-tap-mock"
@@ -13,8 +14,9 @@
 tests_per_shuffle="4"
 tests_per_shuffle_on="4"
 tests_per_shuffle_off="4"
+tests_per_shuffle_neitheronnoroff="3"
 
-plan tests $(((2 * $tests_per_shuffle) + (1 * $tests_per_shuffle_on) + (1 * $tests_per_shuffle_off)))
+plan tests $(((2 * $tests_per_shuffle) + (1 * $tests_per_shuffle_on) + (1 * $tests_per_shuffle_off) + (1 * $tests_per_shuffle_neitheronnoroff)))
 
 function mock_osascript() {
     record_sent_command "$*"
@@ -60,3 +62,11 @@ is "$stderr" "" "stderr of $test_name should be empty"
 like "${sent_commands[0]}" "set shuffle of current playlist to false" "first command of $test_name should contain 'set shuffle of current playlist to false'"
 like "$stdout" "Switching shuffle off." "stdout of $test_name should report that shuffle is being switched off"
 is "${#sent_commands[*]}" "1" "number of commands sent for $test_name should be correct"
+
+# test: itunes shuffle neitheronnoroff
+test_name="'itunes shuffle neitheronnoroff'"
+dispatch_mocked_command "shuffle" "neitheronnoroff"
+
+like "$stderr" "Shuffle must be one of 'on' or 'off'." "stderr of $test_name should give correct usage"
+is "$stdout" "" "stdout of $test_name should be empty"
+is "${#sent_commands[*]}" "0" "number of commands sent for $test_name should be correct"
