@@ -1,4 +1,9 @@
-* bash-itunes 1.2.2 (candidate)
+* bash-itunes 1.2.2 (2013-03-29-00:47)
+  * Substring matching:
+    * "itunes play <song>" and "itunes playlist <playlist>" now look
+      for tracks or playlists containing the search term if an exact
+      match fails, eg: "itunes play fire" will play track "fuel my fire"
+      if it doesn't find a track named "fire".
   * Only perform option parsing and subcommand dispatch if run directly;
     as opposed to being sourced by another script.
   * Add test suite.

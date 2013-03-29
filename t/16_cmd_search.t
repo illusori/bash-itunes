@@ -4,6 +4,10 @@
 # test: itunes search [all] <search>
 # test: itunes search {track | tracks | song | songs} <search>
 # test: itunes search {album | albums} <search>
+# TODO: test: itunes search (not found)
+# TODO: test: itunes search [all] <search> (not found)
+# TODO: test: itunes search {track | tracks | song | songs} <search> (not found)
+# TODO: test: itunes search {album | albums} <search> (not found)
 
 . $(dirname $0)/bash-tap-bootstrap
 . "$BASH_TAP_ROOT/bash-tap-mock"

@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.2.0'
+version='1.2.2'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
@@ -34,7 +34,7 @@ Switches:
     -d          Enable debug messages, additional -d options increase verbosity.
 
 Navigation commands:
-    play        Start or resume playing.
+    play        Resume playing or choose track.
     pause       Pause playing.
     stop        Stop playing.
     next        Skip to next track.
@@ -420,9 +420,15 @@ function _show_current_playlist() {
 #  Navigation commands: play, pause, stop, next, prev, playlist
 
 function _cmd_play() {
-    _tell_itunes "play"
-    _scrub_current_track
-    _show_current_track "Resuming" 1
+    if [ -z "$*" ]; then
+        _tell_itunes "play"
+        _scrub_current_track
+        _show_current_track "Resuming" 1
+    else
+        _tell_itunes "play item 1 of ((tracks of current playlist whose name is \"$*\") & (tracks of current playlist whose name contains \"$*\") & (tracks whose name is \"$*\") & (tracks whose name contains \"$*\"))"
+        _scrub_current_track
+        _show_current_track "Now playing" 1
+    fi
 }
 
 function _cmd_pause() {
@@ -553,7 +559,7 @@ function _cmd_playlist() {
     if [ -z "$1" ]; then
         _cmd_info_playlist
     else
-        _tell_itunes "play playlist \"$*\""
+        _tell_itunes "play item 1 of ((playlists whose name is \"$*\") & (playlists whose name contains \"$*\"))"
         _scrub_current_track
         _scrub_current_playlist
         _fetch_current_playlist
