@@ -1,3 +1,12 @@
+I just addeded some extra shortcuts. In my system "itunes" is aliased as "i" so 
+
+```
+    > i p
+```
+
+plays a song. Al the credits to the original project!
+
+
 Bash iTunes
 ===========
 
@@ -8,31 +17,31 @@ Currently it supports the following commands:
 
 ```
 Navigation commands:
-    play        Start or resume playing.
-    pause       Pause playing.
-    stop        Stop playing.
-    next        Skip to next track.
-    prev        Skip back to previous track.
-    info        View info about current track.
-    search      Search for tracks.
-    shuffle     View or set shuffle status.
-    repeat      View or set repeat status.
-    playlist    View or choose playlist.
-    playlists   List all playlists.
+    p    play        Start or resume playing.
+    pa  pause       Pause playing.
+    s   stop        Stop playing.
+    n    next        Skip to next track.
+    pr  prev        Skip back to previous track.
+    i   info        View info about current track.
+    s   search      Search for tracks.
+    sh  shuffle     View or set shuffle status.
+    r   repeat      View or set repeat status.
+    pl  playlist    View or choose playlist.
+    pls playlists   List all playlists.
 
 Volume commands:
-    vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
-    mute        Mutes iTunes.
-    unmute      Unmutes iTunes, restoring previous volume level.
-    sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
-    sysmute     Mute system sound.
-    sysunmute   Unmute system sound.
+    v    vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
+    m   mute        Mutes iTunes.
+    um  unmute      Unmutes iTunes, restoring previous volume level.
+    sv  sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
+    sm  sysmute     Mute system sound.
+    sum sysunmute   Unmute system sound.
 
 Application commands:
-    open        Start iTunes running.
-    quit        Quit iTunes.
-    show        Hide the iTunes window.
-    hide        Show the iTunes window.
+    o   open        Start iTunes running.
+    q    quit        Quit iTunes.
+    sw  show        Hide the iTunes window.
+    h   hide        Show the iTunes window.
 
 Additional commands:
     version     Show version information and exit.
