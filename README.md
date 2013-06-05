@@ -1,10 +1,19 @@
 I just addeded some extra shortcuts. In my system "itunes" is aliased as "i" so 
 
 ```
-    > i p
+    > i p # alias for 'itunes play'
 ```
 
 plays a song. Al the credits to the original project!
+
+Some example :
+
+```
+    > i n # alias for 'itunes next'
+    > i s # alias for 'itunes stop'
+    > i pls # alias for 'itunes playlists' 
+            # or 'itunes please!' for boring songs :-D    
+```
 
 
 Bash iTunes
@@ -17,20 +26,20 @@ Currently it supports the following commands:
 
 ```
 Navigation commands:
-    p    play        Start or resume playing.
+    p   play        Resume playing or choose track.
     pa  pause       Pause playing.
     s   stop        Stop playing.
-    n    next        Skip to next track.
+    n   next        Skip to next track.
     pr  prev        Skip back to previous track.
     i   info        View info about current track.
-    s   search      Search for tracks.
+    se  search      Search for tracks.
     sh  shuffle     View or set shuffle status.
     r   repeat      View or set repeat status.
     pl  playlist    View or choose playlist.
     pls playlists   List all playlists.
 
 Volume commands:
-    v    vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
+    v   vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
     m   mute        Mutes iTunes.
     um  unmute      Unmutes iTunes, restoring previous volume level.
     sv  sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
@@ -38,15 +47,10 @@ Volume commands:
     sum sysunmute   Unmute system sound.
 
 Application commands:
-    o   open        Start iTunes running.
-    q    quit        Quit iTunes.
-    sw  show        Hide the iTunes window.
-    h   hide        Show the iTunes window.
-
-Additional commands:
-    version     Show version information and exit.
-    help        Show this help and exit.
-    plugins     Show a list of plugins installed.
+    o  open        Start iTunes running.
+    q  quit        Quit iTunes.
+    sw show        Hide the iTunes window.
+    h  hide        Show the iTunes window.
 ```
 
 Setup
