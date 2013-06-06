@@ -34,31 +34,31 @@ Switches:
     -d          Enable debug messages, additional -d options increase verbosity.
 
 Navigation commands:
-    play        Resume playing or choose track.
-    pause       Pause playing.
-    stop        Stop playing.
-    next        Skip to next track.
-    prev        Skip back to previous track.
-    info        View info about current track.
-    search      Search for tracks.
-    shuffle     View or set shuffle status.
-    repeat      View or set repeat status.
-    playlist    View or choose playlist.
-    playlists   List all playlists.
+    p   play        Resume playing or choose track.
+    pa  pause       Pause playing.
+    s   stop        Stop playing.
+    n   next        Skip to next track.
+    pr  prev        Skip back to previous track.
+    i   info        View info about current track.
+    se  search      Search for tracks.
+    sh  shuffle     View or set shuffle status.
+    r   repeat      View or set repeat status.
+    pl  playlist    View or choose playlist.
+    pls playlists   List all playlists.
 
 Volume commands:
-    vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
-    mute        Mutes iTunes.
-    unmute      Unmutes iTunes, restoring previous volume level.
-    sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
-    sysmute     Mute system sound.
-    sysunmute   Unmute system sound.
+    v   vol[ume]    View or adjust iTunes volume 'up', 'down' or percentage.
+    m   mute        Mutes iTunes.
+    um  unmute      Unmutes iTunes, restoring previous volume level.
+    sv  sysvol[ume] View or adjust system volume 'up', 'down' or percentage.
+    sm  sysmute     Mute system sound.
+    sum sysunmute   Unmute system sound.
 
 Application commands:
-    open        Start iTunes running.
-    quit        Quit iTunes.
-    show        Hide the iTunes window.
-    hide        Show the iTunes window.
+    o  open        Start iTunes running.
+    q  quit        Quit iTunes.
+    sw show        Hide the iTunes window.
+    h  hide        Show the iTunes window.
 
 Additional commands:
     version     Show version information and exit.
@@ -716,31 +716,31 @@ function _dispatch() {
     shift
     case "$cmd" in
         #  Navigation commands.
-        play|resume|unpause)
+        p|play|resume|unpause)
                      _cmd_play "$@"      ;;
-        pause)       _cmd_pause "$@"     ;;
-        stop)        _cmd_stop "$@"      ;;
-        next)        _cmd_next "$@"      ;;
-        prev)        _cmd_prev "$@"      ;;
-        info)        _cmd_info "$@"      ;;
-        search)      _cmd_search "$@"    ;;
-        shuffle)     _cmd_shuffle "$@"   ;;
-        repeat)      _cmd_repeat "$@"    ;;
-        playlist)    _cmd_playlist "$@"  ;;
-        playlists)   _cmd_playlists "$@" ;;
+        pa|pause)       _cmd_pause "$@"     ;;
+        s|stop)        _cmd_stop "$@"      ;;
+        n|next)        _cmd_next "$@"      ;;
+        pr|prev)        _cmd_prev "$@"      ;;
+        i|info)        _cmd_info "$@"      ;;
+        se|search)      _cmd_search "$@"    ;;
+        sh|shuffle)     _cmd_shuffle "$@"   ;;
+        r|repeat)      _cmd_repeat "$@"    ;;
+        pl|playlist)    _cmd_playlist "$@"  ;;
+        pls|playlists)   _cmd_playlists "$@" ;;
         #  Volume commands.
-        vol|volume)  _cmd_volume "$@"    ;;
-        mute)        _cmd_mute "$@"      ;;
-        unmute)      _cmd_unmute "$@"    ;;
-        sysvol|sysvolume)
+        v|vol|volume)  _cmd_volume "$@"    ;;
+        m|mute)        _cmd_mute "$@"      ;;
+        um|unmute)      _cmd_unmute "$@"    ;;
+        sv|sysvol|sysvolume)
                      _cmd_sysvolume "$@" ;;
-        sysmute)     _cmd_sysmute "$@"   ;;
-        sysunmute)   _cmd_sysunmute "$@" ;;
+        sm|sysmute)     _cmd_sysmute "$@"   ;;
+        sum|sysunmute)   _cmd_sysunmute "$@" ;;
         #  Application commands.
-        open)        _cmd_open "$@"      ;;
-        quit)        _cmd_quit "$@"      ;;
-        show|reveal) _cmd_show "$@"      ;;
-        hide)        _cmd_hide "$@"      ;;
+        o|open)        _cmd_open "$@"      ;;
+        q|quit)        _cmd_quit "$@"      ;;
+        sw|show|reveal) _cmd_show "$@"      ;;
+        h|hide)        _cmd_hide "$@"      ;;
         #  Extra commands.
         version)     _cmd_version "$@"   ;;
         ""|help)     _cmd_help "$@"      ;;
