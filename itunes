@@ -768,6 +768,14 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
         esac
     done
     shift $(($OPTIND - 1))
+fi
 
+# Run rc file after options processing so that it can inspect arguments.
+if [ -f "$config_dir/config" ]; then
+    . "$config_dir/config"
+fi
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    # Resume "being run directly" behaviour.
     _dispatch "$@"
 fi
