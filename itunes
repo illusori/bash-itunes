@@ -24,9 +24,14 @@ function _cmd_version() {
     echo "$progname version $version"
 }
 
+function _help_help() {
+    _cmd_help
+}
+
 function _cmd_help() {
-    _cmd_version
-    echo "Usage: $progname [-v] [-h] [-d] <command> [<args>]
+    if [ -z "$*" ]; then
+        _cmd_version
+        echo "Usage: $progname [-v] [-h] [-d] <command> [<args>]
 
 Switches:
     -v          Show version information and exit.
@@ -64,16 +69,48 @@ Additional commands:
     version     Show version information and exit.
     help        Show this help and exit.
     plugins     Show a list of plugins installed."
+    else
+        #  Dispatch to _help_<cmd> if they've supplied a command name.
+        orig_cmd="$1"
+        shift
+        _normalize_cmd_name "cmd" "$orig_cmd"
+        if [ -z "$cmd" ]; then
+            _cmd_unknown "$orig_cmd"
+        else
+            #  TODO: check the functions exists. Say no help available if it doesn't.
+            local something_shown=0
+            declare -f "_usage_${cmd}" >/dev/null
+            if [ "$?" = "0" ]; then
+                _usage_${cmd} "$@"
+                something_shown=1
+            fi
+            declare -f "_help_${cmd}" >/dev/null
+            if [ "$?" = "0" ]; then
+                if [ "$something_shown" = "1" ]; then
+                    echo
+                fi
+                _help_${cmd} "$@"
+                something_shown=1
+            fi
+            if [ "$something_shown" = "0" ]; then
+                echo "No help found for '$progname $cmd', try the general help at '$progname help'."
+            fi
+        fi
+    fi
 }
 
 function _cmd_unknown() {
-    echo "Unknown command '$cmd', try '$progname help' for a list of valid commands."
+    echo "Unknown command '$*', try '$progname help' for a list of valid commands."
 }
 
 #  Helper functions
 
 function _err() {
     echo "$*" 1>&2
+}
+
+function _err_func() {
+    ${1} 1>&2
 }
 
 function _log() {
@@ -489,9 +526,13 @@ function _cmd_info_playlist() {
     fi
 }
 
+function _usage_search() {
+    echo "Usage: $progname search [<all | track | albumn | artist >] <search term>"
+}
+
 function _cmd_search() {
     if [ -z "$*" ]; then
-        _err "Usage: $progname search [<all | track | albumn | artist >] <search term>"
+        _err_func _usage_search
     else
         local target
         local desc
@@ -711,49 +752,67 @@ function _cmd_plugins() {
 
 #  Argument processing and dispatch
 
-function _dispatch() {
-    cmd=$1
-    shift
-    case "$cmd" in
+
+function _normalize_cmd_name() {
+    #  Clunky way to return value because $() runs in subshell and we want to
+    #  auto-source plugins into the main bash-itunes shell. But we also don't
+    #  want to screw around with fd redirect voodoo at the calling point each
+    #  time to capture process output without a subshell.
+    local _varname="$1"
+    local _cmd="$2"
+    case "$_cmd" in
         #  Navigation commands.
         play|resume|unpause)
-                     _cmd_play "$@"      ;;
-        pause)       _cmd_pause "$@"     ;;
-        stop)        _cmd_stop "$@"      ;;
-        next)        _cmd_next "$@"      ;;
-        prev)        _cmd_prev "$@"      ;;
-        info)        _cmd_info "$@"      ;;
-        search)      _cmd_search "$@"    ;;
-        shuffle)     _cmd_shuffle "$@"   ;;
-        repeat)      _cmd_repeat "$@"    ;;
-        playlist)    _cmd_playlist "$@"  ;;
-        playlists)   _cmd_playlists "$@" ;;
+                     _cmd="play"      ;;
+        pause)       _cmd="pause"     ;;
+        stop)        _cmd="stop"      ;;
+        next)        _cmd="next"      ;;
+        prev)        _cmd="prev"      ;;
+        info)        _cmd="info"      ;;
+        search)      _cmd="search"    ;;
+        shuffle)     _cmd="shuffle"   ;;
+        repeat)      _cmd="repeat"    ;;
+        playlist)    _cmd="playlist"  ;;
+        playlists)   _cmd="playlists" ;;
         #  Volume commands.
-        vol|volume)  _cmd_volume "$@"    ;;
-        mute)        _cmd_mute "$@"      ;;
-        unmute)      _cmd_unmute "$@"    ;;
+        vol|volume)  _cmd="volume"    ;;
+        mute)        _cmd="mute"      ;;
+        unmute)      _cmd="unmute"    ;;
         sysvol|sysvolume)
-                     _cmd_sysvolume "$@" ;;
-        sysmute)     _cmd_sysmute "$@"   ;;
-        sysunmute)   _cmd_sysunmute "$@" ;;
+                     _cmd="sysvolume" ;;
+        sysmute)     _cmd="sysmute"   ;;
+        sysunmute)   _cmd="sysunmute" ;;
         #  Application commands.
-        open)        _cmd_open "$@"      ;;
-        quit)        _cmd_quit "$@"      ;;
-        show|reveal) _cmd_show "$@"      ;;
-        hide)        _cmd_hide "$@"      ;;
+        open)        _cmd="open"      ;;
+        quit)        _cmd="quit"      ;;
+        show|reveal) _cmd="show"      ;;
+        hide)        _cmd="hide"      ;;
         #  Extra commands.
-        version)     _cmd_version "$@"   ;;
-        ""|help)     _cmd_help "$@"      ;;
-        plugins)     _cmd_plugins "$@"   ;;
+        version)     _cmd="version"   ;;
+        ""|help)     _cmd="help"      ;;
+        plugins)     _cmd="plugins"   ;;
         *)
-            if [ -f "$plugins_dir/$cmd" ]; then
-                . "$plugins_dir/$cmd"
-                _cmd_$cmd "$@"
+            if [ -f "$plugins_dir/$_cmd" ]; then
+                . "$plugins_dir/$_cmd"
             else
-               _cmd_unknown "$@"
+                _cmd=""
             fi
             ;;
     esac
+    eval "${_varname}=\"${_cmd}\""
+}
+
+#  Argument processing and dispatch
+
+function _dispatch() {
+    orig_cmd="$1"
+    shift
+    _normalize_cmd_name "cmd" "$orig_cmd"
+    if [ -z "$cmd" ]; then
+        _cmd_unknown "$orig_cmd"
+    else
+        _cmd_${cmd} "$@"
+    fi
 }
 
 debug=0
