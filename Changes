@@ -1,5 +1,6 @@
-* bash-itunes 1.2.3 (candidate)
+* bash-itunes 1.2.3 (2014-11-29-19:15)
   * Run config file in ~/.bash-itunes/config if it exists.
+  * Internal/plugins: Automatically generate help from _usage_* and _help_* functions.
 
 * bash-itunes 1.2.2 (2013-03-29-00:47)
   * Substring matching:
