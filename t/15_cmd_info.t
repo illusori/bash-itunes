@@ -86,7 +86,7 @@ dispatch_mocked_command "info" "playlist"
 
 is "$stderr" "" "stderr of $test_name should be empty"
 test_send_commands_current_track_fetch "0" "first" "$test_name"
-test_send_commands_current_playlist_fetch "2" "third" "$test_name"
+test_send_commands_current_playlist_fetch "3" "fourth" "$test_name"
 test_playlist_displayed "$stdout" "mock_playlist_1" "stdout of $test_name"
 test_track_displayed "$stdout" "mock_track_1" "stdout of $test_name"
 test_track_displayed "$stdout" "mock_track_2" "stdout of $test_name"

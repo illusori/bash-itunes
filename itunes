@@ -4,7 +4,7 @@
 #
 #  Install or symlink into your path and "itunes -h" or "itunes help" for help.
 #
-#  Copyright 2012 Sam Graham.  http://www.illusori.co.uk/
+#  Copyright 2012-2014 Sam Graham.  http://www.illusori.co.uk/
 #  This work is licensed under a
 #  Creative Commons Attribution-Share Alike 2.0 UK: England & Wales License
 #  http://creativecommons.org/licenses/by-sa/2.0/uk/
@@ -17,6 +17,8 @@ version='1.2.3'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
+id3v2_editor="mid3v2"
+id3v2_email="nobody@example.com"
 
 #  Version and help.
 
@@ -65,6 +67,9 @@ Application commands:
     show        Hide the iTunes window.
     hide        Show the iTunes window.
 
+Editing commands:
+    rate        Set the iTunes star rating.
+
 Additional commands:
     version     Show version information and exit.
     help        Show this help and exit.
@@ -80,19 +85,19 @@ Additional commands:
             #  TODO: check the functions exists. Say no help available if it doesn't.
             local something_shown=0
             declare -f "_usage_${cmd}" >/dev/null
-            if [ "$?" = "0" ]; then
+            if [ "$?" = 0 ]; then
                 _usage_${cmd} "$@"
                 something_shown=1
             fi
             declare -f "_help_${cmd}" >/dev/null
-            if [ "$?" = "0" ]; then
-                if [ "$something_shown" = "1" ]; then
+            if [ "$?" = 0 ]; then
+                if [ "$something_shown" = 1 ]; then
                     echo
                 fi
                 _help_${cmd} "$@"
                 something_shown=1
             fi
-            if [ "$something_shown" = "0" ]; then
+            if [ "$something_shown" = 0 ]; then
                 echo "No help found for '$progname $cmd', try the general help at '$progname help'."
             fi
         fi
@@ -121,7 +126,7 @@ function _log() {
 }
 
 function _pluralize() {
-    if [ "$1" = "1" ]; then
+    if [ "$1" = 1 ]; then
         echo "$1 $2"
     else
         if [ -n "$3" ]; then
@@ -131,6 +136,16 @@ function _pluralize() {
         fi
     fi
 }
+
+#  mid3v2 communication hackery.
+function _find_id3v2_editor() {
+    if [ -n "is_id3v2_editor_installed" ]; then
+        which -s "$id3v2_editor"
+        is_id3v2_editor_installed=$[!$?]
+    fi
+}
+
+#  AppleScript communication hackery.
 
 function _quote_for_applescript_string() {
     local value="$*"
@@ -187,31 +202,53 @@ function _fetch_from_itunes() {
     #  chose this instead...
     local columns=''
     local script_columns=''
+    local column_defaults=''
     for column in "$@"; do
-        columns="${columns} ${column// /_}"
+        underscored_column="${column// /_}"
+        columns="${columns} ${underscored_column}"
         script_columns="${script_columns}, ${column}"
+        #  "missing value" is what AppleScript uses to stringify missing values, may as well emulate
+        column_defaults="${column_defaults}, ${underscored_column}:\"missing value\""
     done
     columns="${columns:1}"
     script_columns="${script_columns:2}"
+    if [ $# = 1 ]; then
+        column_defaults='"missing value"'
+    else
+        column_defaults="{${column_defaults:2}}"
+    fi
 
     _log 4 "source '$structure', prefix '$prefix', columns '$columns', script_columns '$script_columns'"
 
     #  Best if we don't loop within AppleScript, it can be painfully slow
     #  for large arrays, but on the other hand, for columns that are
     #  actually expressions rather than properties, we appear to have to loop.
+    #  Same deal appears to be the case if we need to safeguard against properties
+    #  that may or may not exist on the track objects (file locaton for example)
     if [ "$use_loop" = 0 ]; then
         local result=$(_ask_itunes "set ret to ($script_columns) of $source")
         _log 4 "result '$result'"
         _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
     else
+        #  Error -1728 is property doesn't exist. It'd be nice to catch it on a per
+        #  property basis, but that's a task for another day. Probably should rethrow
+        #  the error if it isn't a -1728 too.
+        #  Using ((properties of v) & $column_defaults was a possibility, but unfortunately
+        #  the properties property on iTunes tracks doesn't actually include all the
+        #  properties of the object, including some we want. AppleScript, I really hate you.
         local result=$(_ask_itunes "set ret to {}
             repeat with v in $source as list
-                copy ($script_columns) of v to the end of ret
+                try
+                    copy ($script_columns) of v to the end of ret
+                on error errorMessage number errorNumber
+                    if errorNumber = -1728 then
+                        copy ($column_defaults) to the end of ret
+                    end if
+                end try
             end repeat")
         _log 4 "result '$result'"
         _read_rows_from_value_lines "$prefix" "$result" $columns
     fi
-
 }
 
 #  Low-level row/rowset fetching/clearing. This stuff is nasty.
@@ -299,10 +336,36 @@ _playlist_columns="name time id"
 
 function _fetch_tracks() {
     _fetch_from_itunes "$@" $_track_columns
+    if [ "$1" = "LOOP" ]; then
+        shift
+    fi
+    local source="$1"
+    local prefix="$2"
+    #  Can't just add location to _track_columns because not all tracks define it.
+    #  (Streams, Home Sharing, etc)
+    #  Can't just use the LOOP fetch safeguard either because we need to transform
+    #  to POSIX path, which you can't do in an array copy.
+    #  As usual AppleScript randomly decides it needs a temporary variable too.
+    #  AppleScript, you never make life easy do you?
+    #_fetch_from_itunes LOOP "$source" "$prefix" "location"
+    local result=$(_ask_itunes "set ret to {}
+        repeat with v in $source as list
+            try
+                set loc to location of v
+                copy POSIX path of loc to the end of ret
+            on error errorMessage number errorNumber
+                if errorNumber = -1728 then
+                    copy \"missing value\" to the end of ret
+                end if
+            end try
+        end repeat")
+    _log 4 "result '$result'"
+    _read_rows_from_value_lines "$prefix" "$result" "location"
 }
 function _scrub_tracks() {
     local prefix="$1"
     _scrub_rows "$prefix" $_track_columns
+    _scrub_rows "$prefix" "location"
 }
 
 function _fetch_playlists() {
@@ -322,6 +385,7 @@ function _scrub_playlists() {
 function _fetch_current_track() {
     if [ -z "$current_track_name" ]; then
         _fetch_tracks "current track" current_track
+        _fetch_track_id3v2 "current track" current_track
     fi
     if [ -z "$current_track_pos" ]; then
         current_track_pos=$(_tell_itunes "player position as integer")
@@ -345,6 +409,26 @@ function _scrub_current_playlist() {
     _scrub_playlists "current_playlist"
 }
 
+function _fetch_track_id3v2() {
+    _find_id3v2_editor
+    if [ "$is_id3v2_editor_installed" != 1 ]; then
+        _log 1 "id3v2 editor not found."
+        return
+    fi
+    local source="$1"
+    local prefix="$2"
+    local row_idx="${3:-0}"
+
+    eval "local location=\${${prefix}_location[row_idx]}"
+
+    if [ -z "$location" -o "$location" = "missing value" ]; then
+        rating=0
+    else
+        rating=$($id3v2_editor -l "$location" | grep POPM | cut -f 2 -d ' ' | cut -f 1 -d '/')
+    fi
+    #echo "rating '$rating'"
+    eval "${prefix}_id3v2_rating[${row_idx}]=\"$rating\"";
+}
 
 #  Views.
 
@@ -362,6 +446,8 @@ function _show_track() {
     eval "local rating=\${${row_prefix}_rating[row_idx]}"
     eval "local time=\${${row_prefix}_time[row_idx]}"
     eval "local id=\${${row_prefix}_id[row_idx]}"
+    eval "local location=\${${row_prefix}_location[row_idx]}"
+    eval "local id3v2_rating=\${${row_prefix}_id3v2_rating[row_idx]}"
 
     if [ -n "$preamble" ]; then
         preamble="$preamble "
@@ -382,8 +468,19 @@ function _show_track() {
     else
         echo " ($time)"
     fi
-    if [ "$brief" = 0 -a -n "$rating" -a "$rating" != 0 ]; then
-        echo "You've rated this track $rating."
+    if [ "$brief" = 0 ]; then
+        if [ -n "$rating" -a "$rating" != 0 ]; then
+            rating=$((rating / 20))
+            # z=1;printf -v zs "%-.*s%-.*s\n" $((z+1)) '******' $((6-z)) '......';echo "[${zs:1:5}]"
+            echo "You've rated this track $rating out of 5."
+        fi
+        if [ -n "$location" -a "$location" != "missing value" ]; then
+            echo "File location is \"$location\"."
+        fi
+        if [ -n "$id3v2_rating" -a "$id3v2_rating" != 0 ]; then
+            # z=1;printf -v zs "%-.*s%-.*s\n" $((z+1)) '******' $((6-z)) '......';echo "[${zs:1:5}]"
+            echo "You've rated this track ${id3v2_rating} out of 255 in another program."
+        fi
     fi
 
 }
@@ -751,8 +848,100 @@ function _cmd_plugins() {
     fi
 }
 
-#  Argument processing and dispatch
+function _usage_rate() {
+    echo "Usage: $progname rate [<track>] <rating>"
+}
 
+function _cmd_rate() {
+    if [ -z "$*" ]; then
+        _err_func _usage_rate
+    else
+        local rating="${!#}"
+        local track="${@:1:$#-1}"
+        if [ ! -z "${rating##*[!0-9]*}" ]; then
+            if ((rating >= 0 && rating <= 5)); then
+                echo "TODO: Setting iTunes rating..."
+                # iTunes stores ratings as 0-100.
+                local itunes_rating=$((rating * 20))
+                _find_id3v2_editor
+                if [ "$is_id3v2_editor_installed" = 1 ]; then
+                    # idv3v2 POPM-tag rating is 0-255.
+                    local popt_rating=$((rating * 51))
+                    echo "TODO: set the POPM tag"
+                    # mid3v2 --POPM "bob@example.com:200" 02\ -\ Return.mp3
+                    # mid3v2 -l 02\ -\ Return.mp3
+                fi
+            else
+                _err "Track rating must be a number between 0 and 5, got: '$rating'."
+            fi
+        else
+            _err "Track rating must be a number between 0 and 5, got: '$rating'."
+        fi
+    fi
+}
+
+function _err_need_id3v2_editor() {
+    _err "$id3v2_editor was not found on your system, $*."
+    _err "The default editor (mid3v2) is usually found as part of the mutagen python package, so try installing that. 'sudo easy_install mutagen' usually does the trick."
+}
+
+function _cmd_sync_ratings_from_itunes() {
+    _find_id3v2_editor
+    if [ "$is_id3v2_editor_installed" != 1 ]; then
+        _err_need_id3v2_editor "unable to edit mp3 tags"
+        return
+    fi
+
+    echo "Not implemented (sync ratings from itunes)."
+}
+
+function _cmd_sync_ratings_from_mp3() {
+    _find_id3v2_editor
+    if [ "$is_id3v2_editor_installed" != 1 ]; then
+        _err_need_id3v2_editor "unable to edit mp3 tags"
+        return
+    fi
+
+    echo "Not implemented (sync ratings from mp3)."
+}
+
+function _usage_sync_ratings() {
+    echo "Usage: $progname sync ratings [<from>] <mp3 | itunes>"
+}
+
+function _cmd_sync_ratings() {
+    if [ -z "$*" ]; then
+        _err_func _usage_sinc_ratings
+    else
+        if [ "$1" = "from" ]; then
+            shift
+        fi
+        subcmd="$1"
+        shift
+        case "$subcmd" in
+            itunes) _cmd_sync_ratings_from_itunes "$@" ;;
+            mp3)    _cmd_sync_ratings_from_mp3    "$@" ;;
+            *)      _err_func _usage_sync_ratings      ;;
+        esac
+    fi
+}
+
+function _usage_sync() {
+    echo "Usage: $progname sync ratings [<from>] <mp3 | itunes>"
+}
+
+function _cmd_sync() {
+    if [ -z "$*" ]; then
+        _err_func _usage_sync
+    else
+        subcmd="$1"
+        shift
+        case "$subcmd" in
+            ratings) _cmd_sync_ratings "$@" ;;
+            *)       _err_func _usage_sync  ;;
+        esac
+    fi
+}
 
 function _normalize_cmd_name() {
     #  Clunky way to return value because $() runs in subshell and we want to
@@ -788,6 +977,9 @@ function _normalize_cmd_name() {
         quit)        _cmd="quit"      ;;
         show|reveal) _cmd="show"      ;;
         hide)        _cmd="hide"      ;;
+        #  Editing commands.
+        rate)        _cmd="rate"      ;;
+        sync)        _cmd="sync"      ;;
         #  Extra commands.
         version)     _cmd="version"   ;;
         ""|help)     _cmd="help"      ;;
