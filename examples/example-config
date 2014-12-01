@@ -1,0 +1,5 @@
+#  This is an example config file, it would live in ~/.bash-itunes/config
+
+#  Mutagen gets installed with a version suffix when using MacPorts.
+id3v2_editor="mid3v2"
+id3v2_email="example@example.com"

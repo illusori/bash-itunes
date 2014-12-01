@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# This is an example plugin file, it would live in ~/.bash-itunes/plugins/party.
+
+# These three variables are used by the "itunes plugins" command to display its information.
+PLUGIN_NAME="Party Party!"
+PLUGIN_VERSION="1.0.1"
+PLUGIN_BRIEF="Gets the party started in style."
+
+# _cmd_party does all the work, it gets run from "itunes party".
+# This function is mandatory.
+function _cmd_party() {
+    say -v zarvox "Party party!" &
+    echo "Party party!"
+}
+
+# _usage_party gives a brief statement of the plugin command's syntax.
+# It forms the first part of the output of "itunes help party"
+# This function is optional.
+function _usage_party() {
+    echo "Usage: $progname party"
+}
+
+# _help_party gives a full-text statement of the plugin command's help.
+# It forms the body of the text when doing "itunes help party"
+# This function is optional.
+function _help_party() {
+    echo "Do the party party."
+}
