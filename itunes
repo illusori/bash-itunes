@@ -17,7 +17,17 @@ version='1.2.3'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
+
+#
+# You can override theconfig values below in ~/.bash-itunes/config
+#
+
+# Filename of a mid3v2-compatible tags editor.
+# If you use MacPorts rather than Brew you may need to set this to mid3v2-2.4 or something.
 id3v2_editor="mid3v2"
+# id3v2 tags record ratings against an email address so files can have ratings by multiple people.
+# If this is something you care about, set your email address in this variable.
+# This *will* embed your email address for everyone to read within the file metadata though.
 id3v2_email="nobody@example.com"
 
 #  Version and help.
