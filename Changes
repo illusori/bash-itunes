@@ -1,3 +1,6 @@
+* bash-itunes 1.2.4 (Candidate)
+  * Fix bug in plugins so more than the first gets loaded.
+
 * bash-itunes 1.2.3 (2014-11-29-19:15)
   * Run config file in ~/.bash-itunes/config if it exists.
   * Internal/plugins: Automatically generate help from _usage_* and _help_* functions.

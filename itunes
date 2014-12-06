@@ -719,12 +719,13 @@ function _cmd_hide() {
 
 function _cmd_plugins() {
     echo "Installed plugins:"
+    local GLOBIGNORE="*~"
     local glob="$plugins_dir/*"
     local plugins=($glob)
-    if [ -z "$plugins" -o "$plugins" = "$glob" ]; then
+    if [ -z "${plugins[*]}" -o "${plugins[*]}" = "$glob" ]; then
         echo "  No plugins installed."
     else
-        for plugin in $plugins; do
+        for plugin in "${plugins[@]}"; do
             local plugin_cmd=`basename $plugin`
             echo -n "  $plugin_cmd - "
             if [ -f "$plugin" ]; then
