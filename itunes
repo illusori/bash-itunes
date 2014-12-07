@@ -28,7 +28,8 @@ id3v2_editor="mid3v2"
 # id3v2 tags record ratings against an email address so files can have ratings by multiple people.
 # If this is something you care about, set your email address in this variable.
 # This *will* embed your email address for everyone to read within the file metadata though.
-id3v2_email="nobody@example.com"
+# Some programs just embed the name of the player rather than use the email for this reason.
+id3v2_email="Bash iTunes"
 
 #  Version and help.
 
@@ -150,7 +151,8 @@ function _pluralize() {
 #  mid3v2 communication hackery.
 function _find_id3v2_editor() {
     if [ -n "is_id3v2_editor_installed" ]; then
-        which -s "$id3v2_editor"
+        # -s option to which isn't supported in older OS X.
+        which "$id3v2_editor" >/dev/null
         is_id3v2_editor_installed=$[!$?]
     fi
 }
@@ -234,7 +236,7 @@ function _fetch_from_itunes() {
     #  for large arrays, but on the other hand, for columns that are
     #  actually expressions rather than properties, we appear to have to loop.
     #  Same deal appears to be the case if we need to safeguard against properties
-    #  that may or may not exist on the track objects (file locaton for example)
+    #  that may or may not exist on the track objects (file location for example)
     if [ "$use_loop" = 0 ]; then
         local result=$(_ask_itunes "set ret to ($script_columns) of $source")
         _log 4 "result '$result'"
@@ -353,6 +355,7 @@ function _fetch_tracks() {
     local prefix="$2"
     #  Can't just add location to _track_columns because not all tracks define it.
     #  (Streams, Home Sharing, etc)
+    #  Can't just get only file tracks because then indexes don't line up.
     #  Can't just use the LOOP fetch safeguard either because we need to transform
     #  to POSIX path, which you can't do in an array copy.
     #  As usual AppleScript randomly decides it needs a temporary variable too.
@@ -362,10 +365,16 @@ function _fetch_tracks() {
         repeat with v in $source as list
             try
                 set loc to location of v
-                copy POSIX path of loc to the end of ret
+                if loc is missing value then
+                    copy \"missing value\" to the end of ret
+                else
+                    copy POSIX path of loc to the end of ret
+                end if
             on error errorMessage number errorNumber
                 if errorNumber = -1728 then
                     copy \"missing value\" to the end of ret
+                else
+                    error \"Unhandled error: \" & errorMessage & \", number: \" & errorNumber number 1001
                 end if
             end try
         end repeat")
@@ -434,7 +443,9 @@ function _fetch_track_id3v2() {
     if [ -z "$location" -o "$location" = "missing value" ]; then
         rating=0
     else
-        rating=$($id3v2_editor -l "$location" | grep POPM | cut -f 2 -d ' ' | cut -f 1 -d '/')
+        # TODO: test with multple ratings
+        # TODO: should match same rating email as configured? or prefer at least?
+        rating=$($id3v2_editor -l "$location" | grep POPM | cut -f 3 -d '=' | cut -f 2 -d ' ' | cut -f 1 -d '/')
     fi
     #echo "rating '$rating'"
     eval "${prefix}_id3v2_rating[${row_idx}]=\"$rating\"";
@@ -619,6 +630,7 @@ function _cmd_info_track() {
         _show_current_track "Currently playing"
     else
         _fetch_tracks "track \"$*\"" track
+        _fetch_track_id3v2 "track \"$*\"" track
         _show_track track 0 0
     fi
 }
@@ -870,17 +882,37 @@ function _cmd_rate() {
         local track="${@:1:$#-1}"
         if [ ! -z "${rating##*[!0-9]*}" ]; then
             if ((rating >= 0 && rating <= 5)); then
-                echo "TODO: Setting iTunes rating..."
                 # iTunes stores ratings as 0-100.
                 local itunes_rating=$((rating * 20))
-                _find_id3v2_editor
-                if [ "$is_id3v2_editor_installed" = 1 ]; then
-                    # idv3v2 POPM-tag rating is 0-255.
-                    local popt_rating=$((rating * 51))
-                    echo "TODO: set the POPM tag"
-                    # mid3v2 --POPM "bob@example.com:200" 02\ -\ Return.mp3
-                    # mid3v2 -l 02\ -\ Return.mp3
+        	#echo "FIXME: set the itunes rating to $itunes_rating"
+		# idv3v2 POPM-tag rating is 0-255.
+		local popm_rating=$((rating * 51))
+		#echo "FIXME: set the POPM rating to $popm_rating"
+                if [ -z "$track" ]; then
+                    _fetch_current_track
+                    local track_name="${current_track_name[0]}"
+                    local location="${current_track_location[0]}"
+                    echo "Setting iTunes rating to '$rating' for track '$track_name'..."
+                    _tell_itunes "set rating of current track to $itunes_rating"
+                else
+                    _fetch_tracks "track \"$track\"" track
+                    local track_name="${track_name[0]}"
+                    local location="${track_location[0]}"
+# FIXME: error check
+                    echo "Setting iTunes rating to '$rating' for track '$track_name'..."
+                    _tell_itunes "set rating of track \"$track\" to $itunes_rating"
                 fi
+                echo "FIXME: Track location is \"$location\""
+                if [ -n "$location" ]; then
+                    _find_id3v2_editor
+                    if [ "$is_id3v2_editor_installed" = 1 ]; then
+                        echo "FIXME: set the POPM tag"
+			`$id3v2_editor --POPM "${id3v2_email}:${popm_rating}" "$location"`
+			# no output on error, errors cause output on stdout
+			# echo `$id3v2_editor -l "$location"`
+		    fi
+                fi
+                echo "FIXME: rating set"
             else
                 _err "Track rating must be a number between 0 and 5, got: '$rating'."
             fi
@@ -902,7 +934,7 @@ function _cmd_sync_ratings_from_itunes() {
         return
     fi
 
-    echo "Not implemented (sync ratings from itunes)."
+    echo "FIXME: Not implemented (sync ratings from itunes)."
 }
 
 function _cmd_sync_ratings_from_mp3() {
@@ -912,7 +944,7 @@ function _cmd_sync_ratings_from_mp3() {
         return
     fi
 
-    echo "Not implemented (sync ratings from mp3)."
+    echo "FIXME: Not implemented (sync ratings from mp3)."
 }
 
 function _usage_sync_ratings() {

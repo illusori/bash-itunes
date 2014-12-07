@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# FIXME: finish writing these playlist tests
 # TODO: test: itunes playlist
 # TODO: test: itunes playlist <name>
 # TODO: test: itunes playlist <name> (not found)
@@ -26,7 +27,6 @@ $mock_track_4_data"
     fi
 }
 
-# TODO: finish writing these test
 is "implemented" "not implemented"
 
 # test: itunes search <search>

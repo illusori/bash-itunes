@@ -211,7 +211,8 @@ function test_track_displayed() {
     like "$output" "\(([0-9]+:[0-9][0-9] of )?$track_time\)" "$test_name should contain track time '($track_time)' or '(m:ss of $track_time)'"
 
     if [[ -n "$verbose" && -n "$track_rating" && "$track_rating" > "0" ]]; then
-        like "$output" "You've rated this track $track_rating\\." "$test_name should contain track rating 'You've rated this track $track_rating.'"
+        rating=$((track_rating / 20))
+        like "$output" "You've rated this track $rating out of 5\\." "$test_name should contain track rating 'You've rated this track $rating out of 5.'"
     else
         unlike "$output" "You've rated this track " "$test_name should not contain track rating 'You've rated this track ...'"
     fi
