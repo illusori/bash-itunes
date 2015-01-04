@@ -554,7 +554,20 @@ function _cmd_search() {
 
 function _cmd_shuffle() {
     if [ -z "$1" ]; then
-        curshuffle=$(_tell_itunes "shuffle of current playlist")
+        curshuffle=$(
+        _osascript "
+        tell application \"System Events\"
+           tell application process \"iTunes\"
+              tell menu 1 of menu item \"Shuffle\" of menu \"Controls\" of menu bar 1
+                 set menuitems to name of menu items
+                     if item 1 of menuitems is \"Turn On Shuffle\" then
+                         return false
+                     else
+                        return true
+                     end if 
+                 end tell 
+              end tell 
+         end tell")
         _log 3 "Fetched shuffle is '$curshuffle'"
         if [ "$curshuffle" = "true" ]; then
             echo "Current shuffle setting is on."
@@ -565,11 +578,33 @@ function _cmd_shuffle() {
         case "$1" in
             "on")
                 echo "Switching shuffle on."
-                _tell_itunes "set shuffle of current playlist to true"
+                _osascript "
+                tell application \"System Events\"
+	               tell application process \"iTunes\"
+		              tell menu 1 of menu item \"Shuffle\" of menu \"Controls\" of menu bar 1
+			             set menuitems to name of menu items
+			                 if item 1 of menuitems is \"Turn On Shuffle\" then
+			                     click menu item 1
+			                 end if 
+			             end tell 
+			          end tell 
+			     end tell
+			     return"
                 ;;
             "off")
                 echo "Switching shuffle off."
-                _tell_itunes "set shuffle of current playlist to false"
+                _osascript "
+                tell application \"System Events\"
+	               tell application process \"iTunes\"
+		              tell menu 1 of menu item \"Shuffle\" of menu \"Controls\" of menu bar 1
+			             set menuitems to name of menu items
+			                 if item 1 of menuitems is \"Turn Off Shuffle\" then
+			                     click menu item 1
+			                 end if 
+			             end tell 
+			          end tell 
+			     end tell
+			     return"
                 ;;
             *)
                 _err "Shuffle must be one of 'on' or 'off'."
