@@ -87,11 +87,11 @@ function test_send_commands_current_track_fetch() {
     local third_idx=$((first_idx + 2));
 
     like "${sent_commands[$first_idx]}" 'of current track' "$ordinal sent command of $test_name should be fetch of 'current track'"
-    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$first_idx]}" "tell application \"$itunes_app\"" "$ordinal sent command of $test_name should contain 'tell application \"$itunes_app\"'"
     like "${sent_commands[$second_idx]}" 'in current track' "next sent command of $test_name should be fetch of 'current track' location"
-    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$second_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
     like "${sent_commands[$third_idx]}" 'player position as integer' "next sent command of $test_name should contain 'player position as integer'"
-    like "${sent_commands[$third_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$third_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 }
 
 tests_per_track_fetched=4
@@ -107,9 +107,9 @@ function test_send_commands_track_fetch() {
     track_specifier=$(regexp_quotemeta "$track_specifier")
 
     like "${sent_commands[$first_idx]}" "of $track_specifier" "$ordinal sent command of $test_name should be fetch of $track_specifier"
-    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$first_idx]}" "tell application \"$itunes_app\"" "$ordinal sent command of $test_name should contain 'tell application \"$itunes_app\"'"
     like "${sent_commands[$second_idx]}" "in $track_specifier" "next sent command of $test_name should be fetch of $track_specifier location"
-    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$second_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 }
 
 # special cases: full dataset, single quotes and double quotes to mess things up
@@ -234,20 +234,20 @@ function test_send_commands_playlist_fetch() {
 
     # First command is fetch of playlist details
     like "${sent_commands[$first_idx]}" "of $playlist_specifier" "$ordinal sent command of $test_name should be fetch of $playlist_specifier"
-    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$first_idx]}" "tell application \"$itunes_app\"" "$ordinal sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 
     # Second command is fetch of number of tracks
     like "${sent_commands[$second_idx]}" "in $playlist_specifier" "next sent command of $test_name should loop over the matching playlists"
     like "${sent_commands[$second_idx]}" "\(count tracks\)" "next sent command of $test_name should count tracks for each matching playlist"
-    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$second_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 
     # Third command is fetch of track details
     like "${sent_commands[$third_idx]}" "of every track of $playlist_specifier" "next sent command of $test_name should be fetch of tracks in the playlist"
-    like "${sent_commands[$third_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$third_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 
     # Fourth command is fetch of track location
     like "${sent_commands[$fourth_idx]}" "in every track of $playlist_specifier" "next sent command of $test_name should be fetch of location of tracks in the playlist"
-    like "${sent_commands[$fourth_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$fourth_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 }
 
 tests_per_current_playlist_fetched="$tests_per_playlist_fetched"
@@ -367,11 +367,11 @@ function test_send_commands_search_fetch() {
     # First command is the search
     like "${sent_commands[$first_idx]}" "search playlist \"Library\" for \"$search_term\"" "$ordinal sent command of $test_name should contain search for '$search_term'"
     like "${sent_commands[$first_idx]}" "$search_restriction" "$ordinal sent command of $test_name should restrict search to '$search_restriction'"
-    like "${sent_commands[$first_idx]}" 'tell application "iTunes"' "$ordinal sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$first_idx]}" "tell application \"$itunes_app\"" "$ordinal sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 
     # Second command is the location fetch
     like "${sent_commands[$second_idx]}" "search playlist \"Library\" for \"$search_term\"" "next sent command of $test_name should contain search for '$search_term'"
     like "${sent_commands[$second_idx]}" "$search_restriction" "next sent command of $test_name should restrict search to '$search_restriction'"
-    like "${sent_commands[$second_idx]}" 'tell application "iTunes"' "next sent command of $test_name should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[$second_idx]}" "tell application \"$itunes_app\"" "next sent command of $test_name should contain 'tell application \"$itunes_app\"'"
 }
 

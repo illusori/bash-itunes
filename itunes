@@ -19,7 +19,7 @@ config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
 
 #
-# You can override theconfig values below in ~/.bash-itunes/config
+# You can override the config values below in ~/.bash-itunes/config
 #
 
 # Filename of a mid3v2-compatible tags editor.
@@ -30,6 +30,10 @@ id3v2_editor="mid3v2"
 # This *will* embed your email address for everyone to read within the file metadata though.
 # Some programs just embed the name of the player rather than use the email for this reason.
 id3v2_email="Bash iTunes"
+
+# Add the commented-out line to your ~/.bash-itunes/config if you're still using iTunes.app.
+#itunes_app="iTunes"
+itunes_app="Music"
 
 #  Version and help.
 
@@ -180,11 +184,11 @@ function _osascript() {
 }
 
 function _tell_itunes() {
-    _osascript "tell application \"iTunes\" to $*"
+    _osascript "tell application \"${itunes_app}\" to $*"
 }
 
 function _ask_itunes() {
-    _osascript "tell application \"iTunes\"
+    _osascript "tell application \"${itunes_app}\"
             $*
             set AppleScript's text item delimiters to \"\\n\"
             ret as text
@@ -828,12 +832,12 @@ function _cmd_quit() {
 
 function _cmd_show() {
     echo "Showing iTunes window."
-    _osascript "tell application \"System Events\" to set visible of process \"iTunes\" to true"
+    _osascript "tell application \"System Events\" to set visible of process \"${itunes_app}\" to true"
 }
 
 function _cmd_hide() {
     echo "Hiding iTunes window."
-    _osascript "tell application \"System Events\" to set visible of process \"iTunes\" to false"
+    _osascript "tell application \"System Events\" to set visible of process \"${itunes_app}\" to false"
 }
 
 function _cmd_plugins() {

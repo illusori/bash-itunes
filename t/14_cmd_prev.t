@@ -23,7 +23,7 @@ dispatch_mocked_command "prev"
 
 is "$stderr" "" "stderr should be empty"
 like "${sent_commands[0]}" 'previous track' "first sent command should contain 'previous track'"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent command should contain 'tell application \"iTunes\"'"
+like "${sent_commands[0]}" "tell application \"$itunes_app\"" "first sent command should contain 'tell application \"iTunes\"'"
 
 test_send_commands_current_track_fetch "1" "second" "prev"
 

@@ -29,7 +29,7 @@ for subcommand in "play" "resume" "unpause"; do
 
     is "$stderr" "" "stderr of $test_name should be empty"
     like "${sent_commands[0]}" 'play' "first sent command of $test_name should contain 'play'"
-    like "${sent_commands[0]}" 'tell application "iTunes"' "first sent of $test_name command should contain 'tell application \"iTunes\"'"
+    like "${sent_commands[0]}" "tell application \"$itunes_app\"" "first sent of $test_name command should contain 'tell application \"$itunes_app\"'"
 
     test_send_commands_current_track_fetch "1" "second" "$test_name"
 
@@ -47,7 +47,7 @@ like "${sent_commands[0]}" 'tracks of current playlist whose name is "storm"' "f
 like "${sent_commands[0]}" 'tracks of current playlist whose name contains "storm"' "first sent command of $test_name should try to play substring match from current playlist"
 like "${sent_commands[0]}" 'tracks whose name is "storm"' "first sent command of $test_name should try to play exact match from library"
 like "${sent_commands[0]}" 'tracks whose name contains "storm"' "first sent command of $test_name should try to play substring match from library"
-like "${sent_commands[0]}" 'tell application "iTunes"' "first sent of $test_name command should contain 'tell application \"iTunes\"'"
+like "${sent_commands[0]}" "tell application \"$itunes_app\"" "first sent of $test_name command should contain 'tell application \"$itunes_app\"'"
 
 test_send_commands_current_track_fetch "1" "second" "$test_name"
 
