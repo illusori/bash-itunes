@@ -939,6 +939,43 @@ function _cmd_sync_ratings_from_itunes() {
     fi
 
     echo "FIXME: Not implemented (sync ratings from itunes)."
+    echo "Scanning track catalogue. This may take a minute."
+    # Yikes.
+    # FIXME: every file track?
+    _fetch_tracks "every track" all_tracks
+
+    local prefix="all_tracks"
+    local track_idx=0
+    eval "local track_name=\${${prefix}_name[track_idx]}"
+    eval "local location=\${${prefix}_location[track_idx]}"
+    eval "local rating=\${${prefix}_rating[track_idx]}"
+    while [ -n "$track_name" ]; do
+        if [ -n "$location" ]; then
+	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
+	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
+	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
+	    local stars="0"
+	    if [ -n "$rating" -a "$rating" != 0 ]; then
+		stars=$((rating / 20))
+#echo "found stars ${stars}"
+	    fi
+	    local id3v2_stars="0"
+	    if [ -n "$id3v2_rating" -a "$id3v2_rating" != 0 ]; then
+		id3v2_stars=$((id3v2_rating / 51))
+	    fi
+	    if [ "$stars" != "$id3v2_stars" ]; then
+		echo -ne "\r\033[KExporting ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
+		id3v2_rating=$((stars * 51))
+		`$id3v2_editor --POPM "${id3v2_email}:${id3v2_rating}" "$location"`
+	    fi
+        fi
+        track_idx=$((track_idx + 1))
+        eval "track_name=\${${prefix}_name[track_idx]}"
+        eval "location=\${${prefix}_location[track_idx]}"
+        eval "rating=\${${prefix}_rating[track_idx]}"
+    done
+
+    echo
 }
 
 function _cmd_sync_ratings_from_mp3() {
@@ -949,6 +986,44 @@ function _cmd_sync_ratings_from_mp3() {
     fi
 
     echo "FIXME: Not implemented (sync ratings from mp3)."
+    echo "Scanning track catalogue. This may take a minute."
+    # Yikes.
+    # FIXME: every file track?
+    _fetch_tracks "every track" all_tracks
+
+    local prefix="all_tracks"
+    local track_idx=0
+    eval "local track_name=\${${prefix}_name[track_idx]}"
+    eval "local track_id=\${${prefix}_id[track_idx]}"
+    eval "local location=\${${prefix}_location[track_idx]}"
+    eval "local rating=\${${prefix}_rating[track_idx]}"
+    while [ -n "$track_name" ]; do
+        if [ -n "$location" ]; then
+	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
+	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
+	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
+	    local stars="0"
+	    if [ -n "$rating" -a "$rating" != 0 ]; then
+		stars=$((rating / 20))
+	    fi
+	    local id3v2_stars="0"
+	    if [ -n "$id3v2_rating" -a "$id3v2_rating" != 0 ]; then
+		id3v2_stars=$((id3v2_rating / 51))
+	    fi
+	    if [ "$stars" != "$id3v2_stars" ]; then
+		echo -ne "\r\033[KImporting ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
+		rating=$((id3v2_stars * 20))
+                _tell_itunes "set rating of track id \"$track_id\" to $rating"
+	    fi
+        fi
+        track_idx=$((track_idx + 1))
+        eval "track_name=\${${prefix}_name[track_idx]}"
+        eval "track_id=\${${prefix}_id[track_idx]}"
+        eval "location=\${${prefix}_location[track_idx]}"
+        eval "rating=\${${prefix}_rating[track_idx]}"
+    done
+
+    echo
 }
 
 function _usage_sync_ratings() {
