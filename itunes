@@ -889,10 +889,8 @@ function _cmd_rate() {
             if ((rating >= 0 && rating <= 5)); then
                 # iTunes stores ratings as 0-100.
                 local itunes_rating=$((rating * 20))
-        	#echo "FIXME: set the itunes rating to $itunes_rating"
 		# id3v2 POPM-tag rating is 0-255.
 		local popm_rating=$((rating * 51))
-		#echo "FIXME: set the POPM rating to $popm_rating"
                 if [ -z "$track" ]; then
                     _fetch_current_track
                     local track_name="${current_track_name[0]}"
@@ -903,21 +901,17 @@ function _cmd_rate() {
                     _fetch_tracks "track \"$track\"" track
                     local track_name="${track_name[0]}"
                     local location="${track_location[0]}"
-# FIXME: error check
                     echo "Setting iTunes rating to '$rating' for track '$track_name'..."
                     _tell_itunes "set rating of track \"$track\" to $itunes_rating"
                 fi
-                echo "FIXME: Track location is \"$location\""
                 if [ -n "$location" ]; then
                     _find_id3v2_editor
                     if [ "$is_id3v2_editor_installed" = 1 ]; then
-                        echo "FIXME: set the POPM tag"
 			`$id3v2_editor --POPM "${id3v2_email}:${popm_rating}" "$location"`
 			# no output on error, errors cause output on stdout
 			# echo `$id3v2_editor -l "$location"`
 		    fi
                 fi
-                echo "FIXME: rating set"
             else
                 _err "Track rating must be a number between 0 and 5, got: '$rating'."
             fi
@@ -939,11 +933,9 @@ function _cmd_sync_ratings_from_itunes() {
         return
     fi
 
-    echo "FIXME: Not implemented (sync ratings from itunes)."
     echo "Scanning track catalogue. This may take a minute."
     # Yikes.
-    # FIXME: every file track?
-    _fetch_tracks "every track" all_tracks
+    _fetch_tracks "every file track" all_tracks
     #_fetch_tracks "every track whose artist = \"A7ie\"" all_tracks
 
     local prefix="all_tracks"
@@ -987,11 +979,9 @@ function _cmd_sync_ratings_from_mp3() {
         return
     fi
 
-    echo "FIXME: Not implemented (sync ratings from mp3)."
     echo "Scanning track catalogue. This may take a minute."
     # Yikes.
-    # FIXME: every file track?
-    _fetch_tracks "every track" all_tracks
+    _fetch_tracks "every file track" all_tracks
 
     local prefix="all_tracks"
     local track_idx=0
