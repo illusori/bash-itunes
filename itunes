@@ -242,7 +242,7 @@ function _fetch_from_itunes() {
     #  Same deal appears to be the case if we need to safeguard against properties
     #  that may or may not exist on the track objects (file location for example)
     if [ "$use_loop" = 0 ]; then
-        local result=$(_ask_itunes "set ret to ($script_columns) of $source")
+        local result=$(_ask_itunes "set ret to ($script_columns) of ($source)")
         _log 4 "result '$result'"
         _read_rows_from_value_lines_grouped_by_column "$prefix" "$result" $columns
     else
@@ -444,6 +444,7 @@ function _fetch_track_id3v2() {
 
     eval "local location=\${${prefix}_location[row_idx]}"
 
+    local rating=0
     if [ -z "$location" -o "$location" = "missing value" ]; then
         rating=0
     else
@@ -889,7 +890,7 @@ function _cmd_rate() {
                 # iTunes stores ratings as 0-100.
                 local itunes_rating=$((rating * 20))
         	#echo "FIXME: set the itunes rating to $itunes_rating"
-		# idv3v2 POPM-tag rating is 0-255.
+		# id3v2 POPM-tag rating is 0-255.
 		local popm_rating=$((rating * 51))
 		#echo "FIXME: set the POPM rating to $popm_rating"
                 if [ -z "$track" ]; then
@@ -943,6 +944,7 @@ function _cmd_sync_ratings_from_itunes() {
     # Yikes.
     # FIXME: every file track?
     _fetch_tracks "every track" all_tracks
+    #_fetch_tracks "every track whose artist = \"A7ie\"" all_tracks
 
     local prefix="all_tracks"
     local track_idx=0
@@ -950,7 +952,7 @@ function _cmd_sync_ratings_from_itunes() {
     eval "local location=\${${prefix}_location[track_idx]}"
     eval "local rating=\${${prefix}_rating[track_idx]}"
     while [ -n "$track_name" ]; do
-        if [ -n "$location" ]; then
+        if [ -n "$location" -a "$location" != "missing value" ]; then
 	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
 	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
 	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
@@ -998,7 +1000,7 @@ function _cmd_sync_ratings_from_mp3() {
     eval "local location=\${${prefix}_location[track_idx]}"
     eval "local rating=\${${prefix}_rating[track_idx]}"
     while [ -n "$track_name" ]; do
-        if [ -n "$location" ]; then
+        if [ -n "$location" -a "$location" != "missing value" ]; then
 	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
 	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
 	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
