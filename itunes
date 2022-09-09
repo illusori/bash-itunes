@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='1.2.3'
+version='2.0.0'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
@@ -84,6 +84,7 @@ Application commands:
 
 Editing commands:
     rate        Set the iTunes star rating.
+    sync        Sync ratings to or from audio files files and iTunes database.
 
 Additional commands:
     version     Show version information and exit.

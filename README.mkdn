@@ -1,8 +1,11 @@
 Bash iTunes
 ===========
 
-Bash iTunes is a command-line wrapper for iTunes, letting you easily
+Bash iTunes is a command-line wrapper for iTunes/Music.app, letting you easily
 control iTunes from the terminal or over SSH.
+
+Since version 2.0.0, the default has been to try to control Music.app, but you can
+override this to control iTunes in the config file if you still run older versions of MacOS/OSX.
 
 Currently it supports the following commands:
 
@@ -34,6 +37,10 @@ Application commands:
     show        Hide the iTunes window.
     hide        Show the iTunes window.
 
+Editing commands:
+    rate        Set the iTunes star rating.
+    sync        Sync ratings to or from audio files files and iTunes database.
+
 Additional commands:
     version     Show version information and exit.
     help        Show this help and exit.
@@ -47,6 +54,29 @@ Install the itunes script somewhere on your path, `~/bin` is
 the usual choice, and type `itunes help` to get started.
 
 Have fun.
+
+MP3 Tags Support
+----------------
+
+If you have the Python Mutagen package installed, Bash iTunes will attempt to write any
+rating changes you make with `itunes rate` to both the iTunes database and the MP3 file.
+
+It will also provide access to the `itunes sync` command that allows you to bulk sync
+your ratings between the iTunes database and your MP3s.
+
+Configuration Support
+---------------------
+
+You can override some configuration variables by creating a file in `$HOME/.bash-itunes/config`.
+
+For example:
+
+```bash
+# If your Mutagen python package is installed somewhere weird via MacPorts or something.
+id3v2_editor="mid3v2-3.10"
+# If you're still running a MacOS/OSX old enough to still have iTunes rather than Music.app
+itunes_app="iTunes"
+```
 
 Plugin Support
 --------------
