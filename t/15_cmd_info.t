@@ -26,23 +26,23 @@ plan tests $(((2 * tests_per_info_current_track) + (1 * tests_per_info_named_tra
 
 function mock_osascript() {
     record_sent_command "$*"
-    if [[ "$*" =~ 'of current track' ]]; then
+    if [[ "$*" =~ 'of (current track)' ]]; then
         echo "$mock_track_1_data"
-    elif [[ "$*" =~ 'of track "Sapphire"' ]]; then
+    elif [[ "$*" =~ 'of (track "Sapphire")' ]]; then
         echo "$mock_track_3_data"
     elif [[ "$*" =~ 'player position' ]]; then
         echo "60"
-    elif [[ "$*" =~ '(name, time, id) of current playlist' ]]; then
+    elif [[ "$*" =~ '(name, time, id) of (current playlist)' ]]; then
         echo "$mock_playlist_1_data"
     elif [[ "$*" =~ 'count tracks' && "$*" =~ 'current playlist' ]]; then
         echo "$mock_playlist_1_count"
-    elif [[ "$*" =~ 'of every track of current playlist' ]]; then
+    elif [[ "$*" =~ 'of (every track of current playlist)' ]]; then
         echo "$mock_playlist_1_tracks"
-    elif [[ "$*" =~ '(name, time, id) of playlist "c Synth+Ind (Great)"' ]]; then
+    elif [[ "$*" =~ '(name, time, id) of (playlist "c Synth+Ind (Great)")' ]]; then
         echo "$mock_playlist_2_data"
     elif [[ "$*" =~ 'count tracks' && "$*" =~ 'playlist "c Synth+Ind (Great)"' ]]; then
         echo "$mock_playlist_2_count"
-    elif [[ "$*" =~ 'of every track of playlist "c Synth+Ind (Great)"' ]]; then
+    elif [[ "$*" =~ 'of (every track of playlist "c Synth+Ind (Great)")' ]]; then
         echo "$mock_playlist_2_tracks"
     fi
 }

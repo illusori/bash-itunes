@@ -11,7 +11,7 @@ plan tests $(((4 + (1 * tests_per_current_track_fetched) + (1 * tests_per_track_
 
 function mock_osascript() {
     record_sent_command "$*"
-    if [[ "$*" =~ 'of current track' ]]; then
+    if [[ "$*" =~ 'of (current track)' ]]; then
         echo "$mock_track_1_data"
     elif [[ "$*" =~ 'player position' ]]; then
         echo "60"
