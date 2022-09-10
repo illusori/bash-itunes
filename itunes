@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='2.0.0'
+version='2.0.1'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
@@ -679,7 +679,12 @@ function _cmd_search() {
 
 function _cmd_shuffle() {
     if [ -z "$1" ]; then
-        curshuffle=$(_tell_itunes "shuffle of current playlist")
+        local curshuffle=$(_ask_itunes "set ret to false
+            try
+                set ret to shuffle of current playlist
+            on error number -10001
+                set ret to shuffle enabled
+            end try")
         _log 3 "Fetched shuffle is '$curshuffle'"
         if [ "$curshuffle" = "true" ]; then
             echo "Current shuffle setting is on."
@@ -690,11 +695,21 @@ function _cmd_shuffle() {
         case "$1" in
             "on")
                 echo "Switching shuffle on."
-                _tell_itunes "set shuffle of current playlist to true"
+                local success=$(_ask_itunes "set ret to true
+                    try
+                        set shuffle of current playlist to true
+                    on error number -10001
+                        set shuffle enabled to true
+                    end try")
                 ;;
             "off")
                 echo "Switching shuffle off."
-                _tell_itunes "set shuffle of current playlist to false"
+                local success=$(_ask_itunes "set ret to true
+                    try
+                        set shuffle of current playlist to false
+                    on error number -10001
+                        set shuffle enabled to false
+                    end try")
                 ;;
             *)
                 _err "Shuffle must be one of 'on' or 'off'."
@@ -705,14 +720,24 @@ function _cmd_shuffle() {
 
 function _cmd_repeat() {
     if [ -z "$1" ]; then
-        currepeat=$(_tell_itunes "song repeat of current playlist")
+        local currepeat=$(_ask_itunes "set ret to false
+            try
+                set ret to song repeat of current playlist
+            on error number -1728
+                set ret to song repeat
+            end try")
         _log 3 "Fetched repeat is '$currepeat'"
         echo "Current repeat setting is $currepeat."
     else
         case "$1" in
             "off" | "one" | "all")
                 echo "Switching repeat to $1."
-                _tell_itunes "set song repeat of current playlist to $1"
+                local success=$(_ask_itunes "set ret to true
+                    try
+                        set song repeat of current playlist to $1
+                    on error number -1731
+                        set song repeat to $1
+                    end try")
                 ;;
             *)
                 _err "Repeat must be one of 'one', 'all' or 'off'."
