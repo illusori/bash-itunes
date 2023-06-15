@@ -972,7 +972,7 @@ function _cmd_sync_ratings_from_itunes() {
     while [ -n "$track_name" ]; do
         if [ -n "$location" -a "$location" != "missing value" ]; then
 	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
-	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
+	    _fetch_track_id3v2 "every file track" "all_tracks" "$track_idx"
 	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
 	    local stars="0"
 	    if [ -n "$rating" -a "$rating" != 0 ]; then
@@ -1018,7 +1018,7 @@ function _cmd_sync_ratings_from_mp3() {
     while [ -n "$track_name" ]; do
         if [ -n "$location" -a "$location" != "missing value" ]; then
 	    echo -ne "\r\033[KScanning ratings ($track_idx/${#all_tracks_name[@]}): ${track_name}..."
-	    _fetch_track_id3v2 "every track" "all_tracks" "$track_idx"
+	    _fetch_track_id3v2 "every file track" "all_tracks" "$track_idx"
 	    eval "local id3v2_rating=\${${prefix}_id3v2_rating[track_idx]}"
 	    local stars="0"
 	    if [ -n "$rating" -a "$rating" != 0 ]; then
