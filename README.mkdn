@@ -39,6 +39,8 @@ Application commands:
 
 Editing commands:
     rate        Set the iTunes star rating.
+    heart       Add heart/loved status to a track.
+    unheart     Remove heart/loved status from a track.
     sync        Sync ratings to or from audio files files and iTunes database.
 
 Additional commands:
