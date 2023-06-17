@@ -13,7 +13,7 @@
 #
 #  Use at your own risk, no fitness for purpose implied, etc, etc.
 
-version='2.0.1'
+version='2.1.0'
 progname=`basename $0`
 config_dir="$HOME/.bash-itunes"
 plugins_dir="$config_dir/plugins"
@@ -84,6 +84,8 @@ Application commands:
 
 Editing commands:
     rate        Set the iTunes star rating.
+    heart       Add heart/loved status to a track.
+    unheart     Remove heart/loved status from a track.
     sync        Sync ratings to or from audio files files and iTunes database.
 
 Additional commands:
@@ -346,8 +348,14 @@ function _scrub_rows() {
 
 #  Schema stuff.
 
-_track_columns="name artist album year rating time id"
-_playlist_columns="name time id"
+function _load_schema() {
+    if [ "$supports_hearting" = "true" ]; then
+	_track_columns="name artist album year rating loved time id"
+    else
+	_track_columns="name artist album year rating time id"
+    fi
+    _playlist_columns="name time id"
+}
 
 #  Fetchers/scrubbers for the objects in the schema.
 
@@ -473,14 +481,23 @@ function _show_track() {
     eval "local rating=\${${row_prefix}_rating[row_idx]}"
     eval "local time=\${${row_prefix}_time[row_idx]}"
     eval "local id=\${${row_prefix}_id[row_idx]}"
+    eval "local loved=\${${row_prefix}_loved[row_idx]}"
     eval "local location=\${${row_prefix}_location[row_idx]}"
     eval "local id3v2_rating=\${${row_prefix}_id3v2_rating[row_idx]}"
 
+    if [ "$loved" = "true" ]; then
+        heart="<3 "
+    else
+        heart=""
+    fi
     if [ -n "$preamble" ]; then
         preamble="$preamble "
+        if [ -z "$heart" ] && [ "$supports_hearting" = "true" ]; then
+            heart="   "
+        fi
     fi
 
-    echo -n "$preamble\"$name\""
+    echo -n "$preamble$heart\"$name\""
     if [ -n "$artist" ]; then
         echo -n " by $artist"
     fi
@@ -529,11 +546,11 @@ function _show_tracks() {
     eval "local track_id=\${${prefix}_id[track_idx]}"
     while [ -n "$track_name" ]; do
         if [ "$current_track_id" = "$track_id" ]; then
-            echo -n "* "
+            preamble="*"
         else
-            echo -n "  "
+            preamble=" "
         fi
-        _show_track $prefix $track_idx $brief
+        _show_track $prefix $track_idx $brief "$preamble"
         track_idx=$((track_idx + 1))
         eval "track_name=\${${prefix}_name[track_idx]}"
         eval "track_id=\${${prefix}_id[track_idx]}"
@@ -901,6 +918,48 @@ function _cmd_plugins() {
     fi
 }
 
+function _usage_heart() {
+    echo "Usage: $progname heart [<track>]"
+}
+
+function _cmd_heart() {
+    local track="$*"
+    if [ -z "$track" ]; then
+	_fetch_current_track
+	local track_name="${current_track_name[0]}"
+	local location="${current_track_location[0]}"
+	echo "Hearting track '$track_name'..."
+	_tell_itunes "set loved of current track to true"
+    else
+	_fetch_tracks "track \"$track\"" track
+	local track_name="${track_name[0]}"
+	local location="${track_location[0]}"
+	echo "Hearting track '$track_name'..."
+	_tell_itunes "set loved of track \"$track\" to true"
+    fi
+}
+
+function _usage_unheart() {
+    echo "Usage: $progname unheart [<track>]"
+}
+
+function _cmd_unheart() {
+    local track="$*"
+    if [ -z "$track" ]; then
+	_fetch_current_track
+	local track_name="${current_track_name[0]}"
+	local location="${current_track_location[0]}"
+	echo "Unhearting track '$track_name'..."
+	_tell_itunes "set loved of current track to false"
+    else
+	_fetch_tracks "track \"$track\"" track
+	local track_name="${track_name[0]}"
+	local location="${track_location[0]}"
+	echo "Unhearting track '$track_name'..."
+	_tell_itunes "set loved of track \"$track\" to false"
+    fi
+}
+
 function _usage_rate() {
     echo "Usage: $progname rate [<track>] <rating>"
 }
@@ -1118,6 +1177,9 @@ function _normalize_cmd_name() {
         hide)        _cmd="hide"      ;;
         #  Editing commands.
         rate)        _cmd="rate"      ;;
+        heart|love)  _cmd="heart"     ;;
+        unheart|unlove)
+                     _cmd="unheart"   ;;
         sync)        _cmd="sync"      ;;
         #  Extra commands.
         version)     _cmd="version"   ;;
@@ -1164,6 +1226,16 @@ fi
 # Run rc file after options processing so that it can inspect arguments.
 if [ -f "$config_dir/config" ]; then
     . "$config_dir/config"
+
+    if [ -z "$supports_hearting" ]; then
+        if [ "$itunes_app" = "Music" ]; then
+            supports_hearting='true'
+        else
+            supports_hearting='false'
+        fi
+    fi
+
+    _load_schema
 fi
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then

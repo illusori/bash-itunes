@@ -118,6 +118,7 @@ mock_track_1_artist="Apoptygma Berzerk"
 mock_track_1_album="Welcome To Earth \"Extra bit for testing\""
 mock_track_1_year="2000"
 mock_track_1_rating="100"
+mock_track_1_loved="true"
 mock_track_1_time="6:35"
 mock_track_1_id="10611"
 mock_track_1_data="$mock_track_1_name
@@ -125,6 +126,7 @@ $mock_track_1_artist
 $mock_track_1_album
 $mock_track_1_year
 $mock_track_1_rating
+$mock_track_1_loved
 $mock_track_1_time
 $mock_track_1_id"
 
@@ -134,6 +136,7 @@ mock_track_2_artist="Assemblage 23"
 mock_track_2_album="Addendum"
 mock_track_2_year="2001"
 mock_track_2_rating="0"
+mock_track_2_loved="false"
 mock_track_2_time="5:22"
 mock_track_2_id="15192"
 mock_track_2_data="$mock_track_2_name
@@ -141,6 +144,7 @@ $mock_track_2_artist
 $mock_track_2_album
 $mock_track_2_year
 $mock_track_2_rating
+$mock_track_2_loved
 $mock_track_2_time
 $mock_track_2_id"
 
@@ -150,6 +154,7 @@ mock_track_3_artist="Ayria"
 mock_track_3_album="Debris"
 mock_track_3_year="0"
 mock_track_3_rating="100"
+mock_track_3_loved="true"
 mock_track_3_time="6:14"
 mock_track_3_id="14151"
 mock_track_3_data="$mock_track_3_name
@@ -157,6 +162,7 @@ $mock_track_3_artist
 $mock_track_3_album
 $mock_track_3_year
 $mock_track_3_rating
+$mock_track_3_loved
 $mock_track_3_time
 $mock_track_3_id"
 
@@ -166,6 +172,7 @@ mock_track_4_artist="Apoptygma Berzerk"
 mock_track_4_album="Apbl2000"
 mock_track_4_year="2007"
 mock_track_4_rating="0"
+mock_track_4_loved="false"
 mock_track_4_time="6:57"
 mock_track_4_id="15169"
 mock_track_4_data="$mock_track_4_name
@@ -173,6 +180,7 @@ $mock_track_4_artist
 $mock_track_4_album
 $mock_track_4_year
 $mock_track_4_rating
+$mock_track_4_loved
 $mock_track_4_time
 $mock_track_4_id"
 
@@ -286,6 +294,10 @@ $mock_track_1_rating
 $mock_track_2_rating
 $mock_track_3_rating
 $mock_track_4_rating
+$mock_track_1_loved
+$mock_track_2_loved
+$mock_track_3_loved
+$mock_track_4_loved
 $mock_track_1_time
 $mock_track_2_time
 $mock_track_3_time
@@ -314,6 +326,8 @@ $mock_track_1_year
 $mock_track_3_year
 $mock_track_1_rating
 $mock_track_3_rating
+$mock_track_1_loved
+$mock_track_3_loved
 $mock_track_1_time
 $mock_track_3_time
 $mock_track_1_id
