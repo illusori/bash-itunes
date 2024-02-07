@@ -157,7 +157,7 @@ function _pluralize() {
 
 #  mid3v2 communication hackery.
 function _find_id3v2_editor() {
-    if [ -n "is_id3v2_editor_installed" ]; then
+    if [ -n "$is_id3v2_editor_installed" ]; then
         # -s option to which isn't supported in older OS X.
         which "$id3v2_editor" >/dev/null
         is_id3v2_editor_installed=$[!$?]
